@@ -21,8 +21,6 @@ Une application Rust + Cargo qui affiche la météo actuelle via une notificatio
 - Notifications : `notify-rust` (Linux), `winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
 
 ## Prochaines étapes
-- Implémenter le cache (localisation et météo).
-- Ajouter un fichier de configuration (raccourci, unités, clés API optionnelles).
 - Ajouter une icône météo dans la notification.
 
 ## Arborescence
@@ -33,6 +31,28 @@ Une application Rust + Cargo qui affiche la météo actuelle via une notificatio
 ## Lancement
 ```bash
 cargo run
+```
+
+## Configuration
+Oasis charge un fichier TOML optionnel (valeurs par défaut si absent). Le chemin est
+déterminé dans l'ordre suivant :
+- `OASIS_CONFIG_PATH`
+- `${XDG_CONFIG_HOME}/oasis/config.toml`
+- `${HOME}/.config/oasis/config.toml`
+- `%APPDATA%\\Oasis\\config.toml` (Windows)
+
+Exemple de configuration :
+```toml
+[hotkeys]
+primary = "Alt+A"
+secondary = "Alt+Q"
+
+[cache]
+location_ttl_seconds = 86400
+weather_ttl_seconds = 600
+
+[weather]
+temperature_unit = "celsius" # ou "fahrenheit"
 ```
 
 Une fois lancé, utilisez le raccourci global (Alt+A ou Alt+Q) ou appuyez sur Entrée
