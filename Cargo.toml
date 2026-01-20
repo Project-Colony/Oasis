@@ -14,6 +14,7 @@ reqwest = { version = "0.13.1", features = ["json", "rustls"] }
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
 
 global-hotkey = "0.7.0"
+tao = "0.34.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 notify-rust = "4.11.7"

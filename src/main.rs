@@ -1,9 +1,11 @@
 use anyhow::{anyhow, Context, Result};
-use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
+use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
 use serde::Deserialize;
-use tokio::sync::mpsc;
 use std::io::{self, BufRead};
+use tao::event_loop::{ControlFlow, EventLoopBuilder};
+use tokio::runtime::Builder;
+use tokio::sync::mpsc;
 
 const IP_GEOLOCATION_URL: &str = "https://ipapi.co/json/";
 const IP_GEOLOCATION_FALLBACK_URL: &str = "https://ipwho.is/";
@@ -55,13 +57,13 @@ enum Trigger {
     Manual,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     println!("Oasis Weather Notify - prêt.");
     println!("Raccourcis: Alt+A (AZERTY) ou Alt+Q (QWERTY).");
     println!("Astuce: appuyez sur Entrée (ou tapez 'w') pour déclencher manuellement.");
     println!("Tapez 'quit' pour quitter.");
 
+    let event_loop = EventLoopBuilder::new().build();
     let manager = GlobalHotKeyManager::new().context("Échec init manager hotkey")?;
     let hotkey_azerty = HotKey::new(Some(Modifiers::ALT), Code::KeyA);
     let hotkey_qwerty = HotKey::new(Some(Modifiers::ALT), Code::KeyQ);
@@ -70,15 +72,6 @@ async fn main() -> Result<()> {
 
     let receiver = GlobalHotKeyEvent::receiver();
     let (tx, mut rx) = mpsc::unbounded_channel::<Trigger>();
-
-    let tx_hotkey = tx.clone();
-    std::thread::spawn(move || {
-        while let Ok(event) = receiver.recv() {
-            if event.state == HotKeyState::Pressed {
-                let _ = tx_hotkey.send(Trigger::Hotkey);
-            }
-        }
-    });
 
     let tx_manual = tx.clone();
     std::thread::spawn(move || {
@@ -97,17 +90,33 @@ async fn main() -> Result<()> {
         }
     });
 
-    while let Some(trigger) = rx.recv().await {
-        match trigger {
-            Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
-            Trigger::Manual => println!("Déclenchement manuel, récupération météo..."),
-        }
-        if let Err(error) = handle_hotkey().await {
-            eprintln!("Erreur lors de la récupération météo: {error:#}");
-        }
-    }
+    std::thread::spawn(move || {
+        let runtime = Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Échec init runtime tokio");
+        runtime.block_on(async move {
+            while let Some(trigger) = rx.recv().await {
+                match trigger {
+                    Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
+                    Trigger::Manual => println!("Déclenchement manuel, récupération météo..."),
+                }
+                if let Err(error) = handle_hotkey().await {
+                    eprintln!("Erreur lors de la récupération météo: {error:#}");
+                }
+            }
+        });
+    });
 
-    Ok(())
+    let tx_hotkey = tx.clone();
+    event_loop.run(move |_event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
+        if let Ok(event) = receiver.try_recv() {
+            if event.state == HotKeyState::Pressed {
+                let _ = tx_hotkey.send(Trigger::Hotkey);
+            }
+        }
+    });
 }
 
 async fn handle_hotkey() -> Result<()> {
