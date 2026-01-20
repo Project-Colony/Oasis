@@ -44,8 +44,8 @@ déterminé dans l'ordre suivant :
 Exemple de configuration :
 ```toml
 [hotkeys]
-primary = "Alt+A"
-secondary = "Alt+Q"
+primary = "Super+W"
+secondary = "Super+W"
 
 [cache]
 location_ttl_seconds = 86400
@@ -55,7 +55,7 @@ weather_ttl_seconds = 600
 temperature_unit = "celsius" # ou "fahrenheit"
 ```
 
-Une fois lancé, utilisez le raccourci global (Alt+A ou Alt+Q) ou appuyez sur Entrée
+Une fois lancé, utilisez le raccourci global (Super+W) ou appuyez sur Entrée
 (ou tapez `w`) dans le terminal pour déclencher manuellement la notification. Tapez
 `quit` pour quitter.
 

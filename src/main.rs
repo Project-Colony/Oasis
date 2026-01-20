@@ -16,8 +16,8 @@ const IP_GEOLOCATION_URL: &str = "https://ipapi.co/json/";
 const IP_GEOLOCATION_FALLBACK_URL: &str = "https://ipwho.is/";
 const OPEN_METEO_BASE_URL: &str = "https://api.open-meteo.com/v1/forecast";
 
-const DEFAULT_PRIMARY_HOTKEY: &str = "Alt+A";
-const DEFAULT_SECONDARY_HOTKEY: &str = "Alt+Q";
+const DEFAULT_PRIMARY_HOTKEY: &str = "Super+W";
+const DEFAULT_SECONDARY_HOTKEY: &str = "Super+W";
 const DEFAULT_LOCATION_TTL_SECONDS: u64 = 60 * 60 * 24;
 const DEFAULT_WEATHER_TTL_SECONDS: u64 = 60 * 5;
 
