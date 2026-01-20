@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager};
-use global_hotkey::hotkey::{Code, HotKey, Modifiers, State};
+use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
+use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use serde::Deserialize;
 use tokio::sync::mpsc;
 
@@ -14,6 +14,15 @@ struct IpApiResponse {
     country_name: Option<String>,
     latitude: Option<f64>,
     longitude: Option<f64>,
+}
+
+#[derive(Debug)]
+struct Location {
+    city: Option<String>,
+    region: Option<String>,
+    country_name: Option<String>,
+    latitude: f64,
+    longitude: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,7 +57,7 @@ async fn main() -> Result<()> {
     });
 
     while let Some(event) = rx.recv().await {
-        if event.state != State::Pressed {
+        if event.state != HotKeyState::Pressed {
             continue;
         }
 
@@ -85,7 +94,7 @@ async fn handle_hotkey() -> Result<()> {
     Ok(())
 }
 
-async fn fetch_ip_location() -> Result<IpApiResponse> {
+async fn fetch_ip_location() -> Result<Location> {
     let response = reqwest::get(IP_GEOLOCATION_URL)
         .await
         .context("Échec requête géolocalisation IP")?
@@ -98,10 +107,12 @@ async fn fetch_ip_location() -> Result<IpApiResponse> {
     let latitude = response.latitude.context("Latitude manquante")?;
     let longitude = response.longitude.context("Longitude manquante")?;
 
-    Ok(IpApiResponse {
-        latitude: Some(latitude),
-        longitude: Some(longitude),
-        ..response
+    Ok(Location {
+        city: response.city,
+        region: response.region,
+        country_name: response.country_name,
+        latitude,
+        longitude,
     })
 }
 
