@@ -1,18 +1,15 @@
 # Docs
 
 ## Description
-Oasis Weather Notify est un outil desktop multiplateforme qui affiche la météo actuelle sur demande via un raccourci clavier global. La localisation est dérivée de l'adresse IP, puis la météo est récupérée via une API en temps réel.
+Oasis Weather Notify est un outil desktop multiplateforme qui affiche la météo actuelle sur demande via un raccourci clavier global. La localisation est dérivée de l'adresse IP (avec fallback), puis la météo est récupérée via Open-Meteo.
 
-## API recommandées
+## API utilisées
 ### Géolocalisation IP
-- `https://ipapi.co/json/`
-- `https://ipinfo.io/json`
-- `https://ipwho.is/`
+- Primaire : `https://ipapi.co/json/`
+- Fallback : `https://ipwho.is/`
 
 ### Météo
 - Open-Meteo (gratuit, sans clé)
-- OpenWeather (clé requise)
-- WeatherAPI (clé requise)
 
 ## Fonctionnement détaillé
 1. Le service s'exécute en arrière-plan.
@@ -21,9 +18,11 @@ Oasis Weather Notify est un outil desktop multiplateforme qui affiche la météo
 4. L'app appelle l'API météo avec lat/long.
 5. L'app affiche une notification système.
 
-## Choix techniques à valider
-- Librairie de hotkey globale.
-- Librairie de notification par OS.
+## Choix techniques validés
+- Hotkeys globales : `global-hotkey`.
+- Notifications par OS : `notify-rust` (Linux), `winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
+
+## Choix techniques à compléter
 - Modèle de configuration (fichier TOML).
 - Stratégie de cache et fréquence de mise à jour.
 
