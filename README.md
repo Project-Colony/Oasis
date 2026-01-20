@@ -20,8 +20,8 @@ Une application Rust + Cargo qui affiche la météo actuelle via une notificatio
 - Hotkeys globales : `global-hotkey`.
 - Notifications : `notify-rust` (Linux), `winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
 
-## Prochaines étapes
-- Ajouter une icône météo dans la notification.
+## Notifications
+Les notifications affichent désormais une icône météo (emoji) basée sur le code Open-Meteo.
 
 ## Arborescence
 - `src/` : code Rust.
