@@ -3,6 +3,7 @@ use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use serde::Deserialize;
 use tokio::sync::mpsc;
+use std::io::{self, BufRead};
 
 const IP_GEOLOCATION_URL: &str = "https://ipapi.co/json/";
 const OPEN_METEO_BASE_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -36,10 +37,18 @@ struct OpenMeteoCurrent {
     weather_code: i32,
 }
 
+#[derive(Debug)]
+enum Trigger {
+    Hotkey,
+    Manual,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("Oasis Weather Notify - prêt.");
     println!("Raccourcis: Alt+A (AZERTY) ou Alt+Q (QWERTY).");
+    println!("Astuce: appuyez sur Entrée (ou tapez 'w') pour déclencher manuellement.");
+    println!("Tapez 'quit' pour quitter.");
 
     let manager = GlobalHotKeyManager::new().context("Échec init manager hotkey")?;
     let hotkey_azerty = HotKey::new(Some(Modifiers::ALT), Code::KeyA);
@@ -48,19 +57,38 @@ async fn main() -> Result<()> {
     manager.register(hotkey_qwerty).context("Échec enregistrement Alt+Q")?;
 
     let receiver = GlobalHotKeyEvent::receiver();
-    let (tx, mut rx) = mpsc::unbounded_channel();
+    let (tx, mut rx) = mpsc::unbounded_channel::<Trigger>();
 
     std::thread::spawn(move || {
         while let Ok(event) = receiver.recv() {
-            let _ = tx.send(event);
+            if event.state == HotKeyState::Pressed {
+                let _ = tx.send(Trigger::Hotkey);
+            }
         }
     });
 
-    while let Some(event) = rx.recv().await {
-        if event.state != HotKeyState::Pressed {
-            continue;
+    let tx_manual = tx.clone();
+    std::thread::spawn(move || {
+        let stdin = io::stdin();
+        for line in stdin.lock().lines() {
+            let input = match line {
+                Ok(text) => text.trim().to_lowercase(),
+                Err(_) => continue,
+            };
+            if input == "quit" {
+                break;
+            }
+            if input.is_empty() || input == "w" {
+                let _ = tx_manual.send(Trigger::Manual);
+            }
         }
+    });
 
+    while let Some(trigger) = rx.recv().await {
+        match trigger {
+            Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
+            Trigger::Manual => println!("Déclenchement manuel, récupération météo..."),
+        }
         if let Err(error) = handle_hotkey().await {
             eprintln!("Erreur lors de la récupération météo: {error:#}");
         }
@@ -70,7 +98,6 @@ async fn main() -> Result<()> {
 }
 
 async fn handle_hotkey() -> Result<()> {
-    println!("Raccourci détecté, récupération météo...");
     let location = fetch_ip_location().await?;
     let weather = fetch_weather(location.latitude, location.longitude).await?;
 

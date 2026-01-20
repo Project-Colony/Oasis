@@ -30,5 +30,9 @@ Une application Rust + Cargo qui affiche la météo actuelle via une notificatio
 cargo run
 ```
 
+Une fois lancé, utilisez le raccourci global (Alt+A ou Alt+Q) ou appuyez sur Entrée
+(ou tapez `w`) dans le terminal pour déclencher manuellement la notification. Tapez
+`quit` pour quitter.
+
 ## Licence
 MIT
