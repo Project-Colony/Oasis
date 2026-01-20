@@ -219,12 +219,20 @@ fn main() -> Result<()> {
             .unwrap_or(DEFAULT_SECONDARY_HOTKEY),
         HotKey::new(Some(Modifiers::ALT), Code::KeyQ),
     );
-    manager
-        .register(hotkey_azerty)
-        .context("Échec enregistrement Alt+A")?;
-    manager
-        .register(hotkey_qwerty)
-        .context("Échec enregistrement Alt+Q")?;
+    if hotkey_azerty == hotkey_qwerty {
+        manager
+            .register(hotkey_azerty)
+            .context("Échec enregistrement raccourci")?;
+        println!("Raccourci actif: {hotkey_azerty:?}");
+    } else {
+        manager
+            .register(hotkey_azerty)
+            .context("Échec enregistrement Alt+A")?;
+        manager
+            .register(hotkey_qwerty)
+            .context("Échec enregistrement Alt+Q")?;
+        println!("Raccourcis actifs: {hotkey_azerty:?} et {hotkey_qwerty:?}");
+    }
 
     let receiver = GlobalHotKeyEvent::receiver();
     let (tx, mut rx) = mpsc::unbounded_channel::<Trigger>();
@@ -323,8 +331,9 @@ async fn handle_hotkey(config: &Config, cache: &Arc<Mutex<AppCache>>) -> Result<
         }
     };
 
+    let icon = weather_icon(weather.weather_code);
     let title = format!(
-        "Météo actuelle - {}",
+        "{icon} Météo actuelle - {}",
         location.city.as_deref().unwrap_or("Localisation inconnue")
     );
     let description = weather_description(weather.weather_code);
@@ -527,6 +536,24 @@ fn weather_description(code: i32) -> &'static str {
         95 => "Orage",
         96 | 99 => "Orage avec grêle",
         _ => "Conditions inconnues",
+    }
+}
+
+fn weather_icon(code: i32) -> &'static str {
+    match code {
+        0 => "☀️",
+        1 | 2 => "🌤️",
+        3 => "☁️",
+        45 | 48 => "🌫️",
+        51 | 53 | 55 => "🌦️",
+        56 | 57 => "🧊",
+        61 | 63 | 65 => "🌧️",
+        66 | 67 => "🌧️",
+        71 | 73 | 75 | 77 => "❄️",
+        80 | 81 | 82 => "🌧️",
+        85 | 86 => "🌨️",
+        95 | 96 | 99 => "⛈️",
+        _ => "🌡️",
     }
 }
 
