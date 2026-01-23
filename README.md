@@ -33,6 +33,15 @@ Les notifications affichent désormais une icône météo (emoji) basée sur le 
 cargo run
 ```
 
+## Installation par OS
+Consultez la documentation d'installation détaillée : `docs/installation.md`.
+
+## Build & release
+Des scripts simples sont fournis dans `scripts/` :
+- `./scripts/build.sh` : compile en mode release (optionnellement pour une cible).
+- `./scripts/release.sh` : crée une archive `dist/` pour Linux/macOS.
+- `.\scripts\release.ps1` : crée une archive `dist\` pour Windows.
+
 ## Configuration
 Oasis charge un fichier TOML optionnel (valeurs par défaut si absent). Le chemin est
 déterminé dans l'ordre suivant :
