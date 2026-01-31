@@ -25,8 +25,59 @@ enum Trigger {
     Manual,
 }
 
+fn is_wayland() -> bool {
+    std::env::var("WAYLAND_DISPLAY").is_ok() && std::env::var("DISPLAY").is_err()
+}
+
 fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    let trigger_mode = args.iter().any(|a| a == "--trigger");
+
     let config = config::load_config().unwrap_or_default();
+
+    if trigger_mode {
+        return run_trigger(&config);
+    }
+
+    if is_wayland() {
+        eprintln!("Attention: Wayland détecté sans serveur X11.");
+        eprintln!("Les raccourcis globaux ne fonctionnent pas sous Wayland pur.");
+        eprintln!("Utilisez le mode one-shot avec votre compositeur:");
+        eprintln!();
+        eprintln!("  oasis-weather-notify --trigger");
+        eprintln!();
+        eprintln!("Exemple pour Hyprland (~/.config/hypr/hyprland.conf):");
+        eprintln!("  bind = SUPER SHIFT, W, exec, oasis-weather-notify --trigger");
+        eprintln!();
+        eprintln!("Exemple pour Sway (~/.config/sway/config):");
+        eprintln!("  bindsym Mod4+Shift+w exec oasis-weather-notify --trigger");
+        eprintln!();
+        eprintln!("Lancement en mode daemon malgré tout (les raccourcis pourraient ne pas fonctionner)...");
+    }
+
+    run_daemon(&config)
+}
+
+/// Mode one-shot: récupère la météo, affiche la notification, quitte.
+fn run_trigger(config: &Config) -> Result<()> {
+    let runtime = Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .context("Échec init runtime tokio")?;
+
+    runtime.block_on(async {
+        let client = reqwest::Client::builder()
+            .timeout(HTTP_TIMEOUT)
+            .build()
+            .context("Échec création client HTTP")?;
+
+        let cache = Arc::new(Mutex::new(AppCache::default()));
+        handle_hotkey(&client, config, &cache).await
+    })
+}
+
+/// Mode daemon: écoute les raccourcis globaux en continu (X11/XWayland).
+fn run_daemon(config: &Config) -> Result<()> {
     let cache = Arc::new(Mutex::new(AppCache::default()));
 
     let primary_str = config.hotkeys.primary_str();
@@ -79,6 +130,7 @@ fn main() -> Result<()> {
         }
     });
 
+    let config = config::load_config().unwrap_or_default();
     let cache_for_runtime = Arc::clone(&cache);
     std::thread::spawn(move || {
         let runtime = Builder::new_current_thread()
