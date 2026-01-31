@@ -12,7 +12,7 @@ use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
 use std::io::{self, BufRead};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
 use tokio::runtime::Builder;
 use tokio::sync::{Mutex, mpsc};
@@ -107,7 +107,7 @@ fn main() -> Result<()> {
 
     let tx_hotkey = tx.clone();
     event_loop.run(move |_event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(50));
         if let Ok(event) = receiver.try_recv()
             && event.state == HotKeyState::Pressed
         {
