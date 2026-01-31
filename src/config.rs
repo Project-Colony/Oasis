@@ -4,8 +4,8 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-const DEFAULT_PRIMARY_HOTKEY: &str = "Super+W";
-const DEFAULT_SECONDARY_HOTKEY: &str = "Super+W";
+const DEFAULT_PRIMARY_HOTKEY: &str = "Super+Shift+W";
+const DEFAULT_SECONDARY_HOTKEY: &str = "Super+Shift+W";
 pub const DEFAULT_LOCATION_TTL_SECONDS: u64 = 60 * 60 * 24;
 pub const DEFAULT_WEATHER_TTL_SECONDS: u64 = 60 * 5;
 

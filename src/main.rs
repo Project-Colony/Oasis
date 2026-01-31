@@ -40,7 +40,7 @@ fn main() -> Result<()> {
     let event_loop = EventLoopBuilder::new().build();
     let manager = GlobalHotKeyManager::new().context("Échec init manager hotkey")?;
 
-    let default_hotkey = HotKey::new(Some(Modifiers::SUPER), Code::KeyW);
+    let default_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyW);
     let hotkey_azerty = hotkey::parse_hotkey(primary_str, default_hotkey);
     let hotkey_qwerty = hotkey::parse_hotkey(secondary_str, default_hotkey);
 
