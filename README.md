@@ -16,8 +16,8 @@ source. Console messages are currently in French.
 3. The weather comes from Open-Meteo, which needs no API key.
 4. A native notification shows the place, the temperature and a weather icon.
 
-Notifications use `notify-rust` on Linux, `winrt-notification` with a MessageBox
-fallback on Windows, and `mac-notification-sys` on macOS.
+Notifications use `notify-rust` on Linux, `tauri-winrt-notification` with a
+MessageBox fallback on Windows, and `mac-notification-sys` on macOS.
 
 ## Build from source
 
