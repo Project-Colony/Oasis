@@ -25,8 +25,7 @@ pub struct WeatherCache {
 
 impl WeatherCache {
     pub fn matches_location(&self, lat: f64, lon: f64) -> bool {
-        (self.latitude - lat).abs() < COORD_EPSILON
-            && (self.longitude - lon).abs() < COORD_EPSILON
+        (self.latitude - lat).abs() < COORD_EPSILON && (self.longitude - lon).abs() < COORD_EPSILON
     }
 }
 
