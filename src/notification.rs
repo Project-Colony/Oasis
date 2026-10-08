@@ -56,8 +56,9 @@ fn show_windows_message_box(title: &str, body: &str) {
 
 #[cfg(target_os = "macos")]
 pub fn send_notification(title: &str, body: &str) -> Result<()> {
-    mac_notification_sys::Notification::new(title)
-        .subtitle(body)
+    mac_notification_sys::Notification::new()
+        .title(title)
+        .message(body)
         .send()
         .context("Notification macOS (mac-notification-sys) échouée")?;
     Ok(())
