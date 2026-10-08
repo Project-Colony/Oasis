@@ -14,7 +14,7 @@ fi
 target="${1:-}"
 
 if [[ -n "$target" ]]; then
-  cargo build --release --target "$target"
+  cargo build --locked --release --target "$target"
 else
-  cargo build --release
+  cargo build --locked --release
 fi

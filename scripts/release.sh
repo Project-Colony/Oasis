@@ -17,11 +17,11 @@ package_name="oasis-weather-notify"
 version=$(rg '^version\s*=' Cargo.toml | head -n1 | cut -d '"' -f2)
 
 if [[ -n "$target" ]]; then
-  cargo build --release --target "$target"
+  cargo build --locked --release --target "$target"
   target_dir="target/$target/release"
   archive_target="$target"
 else
-  cargo build --release
+  cargo build --locked --release
   target_dir="target/release"
   archive_target=$(rustc -vV | rg '^host:' | awk '{print $2}')
 fi

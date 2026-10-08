@@ -9,11 +9,11 @@ $versionLine = Select-String -Path Cargo.toml -Pattern '^version\s*=' | Select-O
 $version = $versionLine.Line.Split('"')[1]
 
 if ($Target) {
-  cargo build --release --target $Target
+  cargo build --locked --release --target $Target
   $targetDir = "target/$Target/release"
   $archiveTarget = $Target
 } else {
-  cargo build --release
+  cargo build --locked --release
   $targetDir = "target/release"
   $archiveTarget = (rustc -vV | Select-String -Pattern '^host:').Line.Split(' ')[1]
 }
