@@ -1,72 +1,73 @@
 # Oasis Weather Notify
 
-Une application Rust + Cargo qui affiche la météo actuelle via une notification native (Windows/Linux/macOS) lorsqu'un raccourci clavier global est déclenché. La localisation est dérivée de l'adresse IP (avec fallback), puis la météo est récupérée via l'API Open-Meteo.
+Oasis is a small Rust app that shows the current weather in a native desktop
+notification when you press a global hotkey. It finds your approximate location
+from your IP address, then fetches the current conditions from Open-Meteo.
 
-## Objectif
-- Raccourci clavier global → déclenche une notification système.
-- Localisation via IP (ville + coordonnées).
-- Météo actuelle basée sur latitude/longitude.
-- Multiplateforme (Windows, Linux, macOS).
+## Status
 
-## Flux actuel
-1. Détection du raccourci clavier.
-2. Récupération de la localisation via IP.
-3. Appel d'une API météo (température + description).
-4. Affichage d'une notification native avec lieu + météo.
+Early development (0.1.0). There are no prebuilt releases yet: build it from
+source. Console messages are currently in French.
 
-## Composants utilisés
-- Géolocalisation IP : ipapi.co (fallback ipwho.is).
-- Météo : Open-Meteo (sans clé).
-- Hotkeys globales : `global-hotkey`.
-- Notifications : `notify-rust` (Linux), `winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
+## How it works
 
-## Notifications
-Les notifications affichent désormais une icône météo (emoji) basée sur le code Open-Meteo.
+1. A global hotkey (default `Super+Shift+W`) or the `--trigger` flag starts a lookup.
+2. The location comes from IP geolocation: ipapi.co, with ipwho.is as a fallback.
+3. The weather comes from Open-Meteo, which needs no API key.
+4. A native notification shows the place, the temperature and a weather icon.
 
-## Arborescence
-- `src/` : code Rust.
-- `tasks/` : tâches à faire.
-- `docs/` : documentation détaillée.
+Notifications use `notify-rust` on Linux, `winrt-notification` with a MessageBox
+fallback on Windows, and `mac-notification-sys` on macOS.
 
-## Lancement
+## Build from source
+
+You need a recent stable Rust toolchain (edition 2024) and network access.
+
 ```bash
-cargo run
+cargo build --release
+./target/release/oasis-weather-notify
 ```
 
-## Installation par OS
-Consultez la documentation d'installation détaillée : `docs/installation.md`.
+`scripts/build.sh`, `scripts/release.sh` and `scripts/release.ps1` wrap the
+release build and packaging. See `docs/installation.md` for per-OS notes.
 
-## Build & release
-Des scripts simples sont fournis dans `scripts/` :
-- `./scripts/build.sh` : compile en mode release (optionnellement pour une cible).
-- `./scripts/release.sh` : crée une archive `dist/` pour Linux/macOS.
-- `.\scripts\release.ps1` : crée une archive `dist\` pour Windows.
+## Usage
+
+- Daemon mode (default): listens for the global hotkey. Press Enter or type `w`
+  in the terminal to trigger a notification by hand, and type `quit` to exit.
+- One-shot mode: `oasis-weather-notify --trigger` shows one notification and exits.
+
+Global hotkeys need X11 or XWayland. On pure Wayland, bind the one-shot mode in
+your compositor instead, for example on Hyprland:
+
+```
+bind = SUPER SHIFT, W, exec, oasis-weather-notify --trigger
+```
 
 ## Configuration
-Oasis charge un fichier TOML optionnel (valeurs par défaut si absent). Le chemin est
-déterminé dans l'ordre suivant :
-- `OASIS_CONFIG_PATH`
-- `${XDG_CONFIG_HOME}/oasis/config.toml`
-- `${HOME}/.config/oasis/config.toml`
-- `%APPDATA%\\Oasis\\config.toml` (Windows)
 
-Exemple de configuration :
+Oasis reads an optional TOML file and falls back to defaults when it is missing.
+It looks for the file in this order:
+
+- `OASIS_CONFIG_PATH`
+- `$XDG_CONFIG_HOME/oasis/config.toml`
+- `$HOME/.config/oasis/config.toml`
+- `%APPDATA%\Oasis\config.toml` (Windows)
+
 ```toml
 [hotkeys]
-primary = "Super+W"
-secondary = "Super+W"
+primary = "Super+Shift+W"
+secondary = "Super+Shift+W"
 
 [cache]
 location_ttl_seconds = 86400
-weather_ttl_seconds = 600
+weather_ttl_seconds = 300
 
 [weather]
-temperature_unit = "celsius" # ou "fahrenheit"
+temperature_unit = "celsius" # or "fahrenheit"
 ```
 
-Une fois lancé, utilisez le raccourci global (Super+W) ou appuyez sur Entrée
-(ou tapez `w`) dans le terminal pour déclencher manuellement la notification. Tapez
-`quit` pour quitter.
+## License
 
-## Licence
-MIT
+Oasis is free software, released under the GNU General Public License v3.0 or
+later. See [LICENSE](LICENSE).

@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 description = "Global hotkey weather notification app (IP geolocation + current conditions)."
-license = "MIT"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Project-Colony/Oasis"
 
 [dependencies]
 anyhow = "1.0.100"
