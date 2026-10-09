@@ -13,8 +13,9 @@ use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
 use std::io::{self, BufRead};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tao::event::Event;
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
-use tokio::runtime::Builder;
+use tokio::runtime::{Builder, Runtime};
 use tokio::sync::{Mutex, mpsc};
 
 const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
@@ -25,6 +26,28 @@ enum Trigger {
     Manual,
 }
 
+/// Event sent to the tao loop from other threads.
+#[derive(Debug)]
+enum UserEvent {
+    Quit,
+}
+
+/// A command typed on stdin in daemon mode.
+#[derive(Debug, PartialEq)]
+enum Command {
+    Quit,
+    Trigger,
+}
+
+/// Enter or `w` triggers a lookup, `quit` stops the daemon, anything else is ignored.
+fn parse_command(line: &str) -> Option<Command> {
+    match line.trim().to_lowercase().as_str() {
+        "quit" => Some(Command::Quit),
+        "" | "w" => Some(Command::Trigger),
+        _ => None,
+    }
+}
+
 fn is_wayland() -> bool {
     std::env::var("WAYLAND_DISPLAY").is_ok() && std::env::var("DISPLAY").is_err()
 }
@@ -33,7 +56,11 @@ fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let trigger_mode = args.iter().any(|a| a == "--trigger");
 
-    let config = config::load_config().unwrap_or_default();
+    let config = config::load_config().unwrap_or_else(|error| {
+        eprintln!("Warning: {error:#}");
+        eprintln!("Oasis continues with the default settings.");
+        Config::default()
+    });
 
     if trigger_mode {
         return run_trigger(&config);
@@ -57,29 +84,32 @@ fn main() -> Result<()> {
         );
     }
 
-    run_daemon(&config)
+    run_daemon(config)
+}
+
+/// Builds the runtime and HTTP client up front, so a failure exits with an error.
+fn build_runtime() -> Result<(Runtime, reqwest::Client)> {
+    let runtime = Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .context("failed to start the async runtime")?;
+    let client = reqwest::Client::builder()
+        .timeout(HTTP_TIMEOUT)
+        .build()
+        .context("failed to build the HTTP client")?;
+    Ok((runtime, client))
 }
 
 /// Mode one-shot: récupère la météo, affiche la notification, quitte.
 fn run_trigger(config: &Config) -> Result<()> {
-    let runtime = Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .context("Échec init runtime tokio")?;
-
-    runtime.block_on(async {
-        let client = reqwest::Client::builder()
-            .timeout(HTTP_TIMEOUT)
-            .build()
-            .context("Échec création client HTTP")?;
-
-        let cache = Arc::new(Mutex::new(AppCache::default()));
-        handle_hotkey(&client, config, &cache).await
-    })
+    let (runtime, client) = build_runtime()?;
+    let cache = Arc::new(Mutex::new(AppCache::default()));
+    runtime.block_on(handle_hotkey(&client, config, &cache))
 }
 
 /// Mode daemon: écoute les raccourcis globaux en continu (X11/XWayland).
-fn run_daemon(config: &Config) -> Result<()> {
+fn run_daemon(config: Config) -> Result<()> {
+    let (runtime, client) = build_runtime()?;
     let cache = Arc::new(Mutex::new(AppCache::default()));
 
     let primary_str = config.hotkeys.primary_str();
@@ -90,7 +120,7 @@ fn run_daemon(config: &Config) -> Result<()> {
     println!("Astuce: appuyez sur Entrée (ou tapez 'w') pour déclencher manuellement.");
     println!("Tapez 'quit' pour quitter.");
 
-    let event_loop = EventLoopBuilder::new().build();
+    let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
     let manager = GlobalHotKeyManager::new().context("Échec init manager hotkey")?;
 
     let default_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyW);
@@ -116,35 +146,28 @@ fn run_daemon(config: &Config) -> Result<()> {
     let (tx, mut rx) = mpsc::unbounded_channel::<Trigger>();
 
     let tx_manual = tx.clone();
+    let proxy = event_loop.create_proxy();
     std::thread::spawn(move || {
-        let stdin = io::stdin();
-        for line in stdin.lock().lines() {
-            let input = match line {
-                Ok(text) => text.trim().to_lowercase(),
-                Err(_) => continue,
-            };
-            if input == "quit" {
-                break;
-            }
-            if input.is_empty() || input == "w" {
-                let _ = tx_manual.send(Trigger::Manual);
+        // EOF or a read error only ends this thread: under Colony, or with
+        // stdin from /dev/null, EOF arrives at once and the hotkeys must keep working.
+        for line in io::stdin().lock().lines() {
+            let Ok(line) = line else { break };
+            match parse_command(&line) {
+                Some(Command::Quit) => {
+                    let _ = proxy.send_event(UserEvent::Quit);
+                    break;
+                }
+                Some(Command::Trigger) => {
+                    let _ = tx_manual.send(Trigger::Manual);
+                }
+                None => {}
             }
         }
     });
 
-    let config = config::load_config().unwrap_or_default();
     let cache_for_runtime = Arc::clone(&cache);
     std::thread::spawn(move || {
-        let runtime = Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Échec init runtime tokio");
         runtime.block_on(async move {
-            let client = reqwest::Client::builder()
-                .timeout(HTTP_TIMEOUT)
-                .build()
-                .expect("Échec création client HTTP");
-
             while let Some(trigger) = rx.recv().await {
                 match trigger {
                     Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
@@ -158,7 +181,11 @@ fn run_daemon(config: &Config) -> Result<()> {
     });
 
     let tx_hotkey = tx.clone();
-    event_loop.run(move |_event, _, control_flow| {
+    event_loop.run(move |event, _, control_flow| {
+        if let Event::UserEvent(UserEvent::Quit) = event {
+            *control_flow = ControlFlow::Exit;
+            return;
+        }
         *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(50));
         if let Ok(event) = receiver.try_recv()
             && event.state == HotKeyState::Pressed
@@ -247,4 +274,19 @@ async fn handle_hotkey(
 
     notification::send_notification(&title, &full_body)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_command_maps_stdin_lines() {
+        assert_eq!(parse_command(""), Some(Command::Trigger));
+        assert_eq!(parse_command("w"), Some(Command::Trigger));
+        assert_eq!(parse_command("W "), Some(Command::Trigger));
+        assert_eq!(parse_command("quit"), Some(Command::Quit));
+        assert_eq!(parse_command("QUIT"), Some(Command::Quit));
+        assert_eq!(parse_command("x"), None);
+    }
 }

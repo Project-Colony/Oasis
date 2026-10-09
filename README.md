@@ -49,7 +49,9 @@ bind = SUPER SHIFT, W, exec, oasis-weather-notify --trigger
 ## Configuration
 
 Oasis reads an optional TOML file and falls back to defaults when it is missing.
-It looks for the file in this order:
+If the file exists but cannot be read or parsed, Oasis prints a warning with the
+path and the error, then runs with the defaults. It looks for the file in this
+order:
 
 - `OASIS_CONFIG_PATH`
 - `$XDG_CONFIG_HOME/oasis/config.toml`

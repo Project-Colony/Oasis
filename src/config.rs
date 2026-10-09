@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const DEFAULT_PRIMARY_HOTKEY: &str = "Super+Shift+W";
 const DEFAULT_SECONDARY_HOTKEY: &str = "Super+Shift+W";
@@ -91,18 +91,24 @@ impl TemperatureUnit {
     }
 }
 
+/// Missing file gives the defaults. A file that cannot be read or parsed is an error
+/// that names the path.
 pub fn load_config() -> Result<Config> {
-    let Some(path) = config_path() else {
-        return Ok(Config::default());
-    };
+    match config_path() {
+        Some(path) => load_config_from(&path),
+        None => Ok(Config::default()),
+    }
+}
 
+fn load_config_from(path: &Path) -> Result<Config> {
     if !path.exists() {
         return Ok(Config::default());
     }
 
-    let content = fs::read_to_string(&path)
-        .with_context(|| format!("Lecture config impossible: {}", path.display()))?;
-    toml::from_str(&content).context("Parsing config TOML impossible")
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("cannot read the config file {}", path.display()))?;
+    toml::from_str(&content)
+        .with_context(|| format!("cannot parse the config file {}", path.display()))
 }
 
 fn config_path() -> Option<PathBuf> {
@@ -128,4 +134,33 @@ fn config_path() -> Option<PathBuf> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_path(name: &str) -> PathBuf {
+        env::temp_dir().join(format!("oasis-{}-{name}", std::process::id()))
+    }
+
+    #[test]
+    fn missing_file_gives_defaults() {
+        let config = load_config_from(&temp_path("missing.toml")).unwrap();
+        assert_eq!(config.hotkeys.primary_str(), DEFAULT_PRIMARY_HOTKEY);
+        assert_eq!(
+            config.cache.location_ttl_seconds,
+            Some(DEFAULT_LOCATION_TTL_SECONDS)
+        );
+    }
+
+    #[test]
+    fn malformed_toml_is_an_error_naming_the_path() {
+        let path = temp_path("malformed.toml");
+        fs::write(&path, "[hotkeys\nprimary = ").unwrap();
+        let result = load_config_from(&path);
+        fs::remove_file(&path).unwrap();
+        let error = format!("{:#}", result.unwrap_err());
+        assert!(error.contains(&path.display().to_string()), "{error}");
+    }
 }
