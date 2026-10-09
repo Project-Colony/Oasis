@@ -13,7 +13,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 target="${1:-}"
-package_name="oasis-weather-notify"
+package_name="oasis"
 version=$(rg '^version\s*=' Cargo.toml | head -n1 | cut -d '"' -f2)
 
 if [[ -n "$target" ]]; then

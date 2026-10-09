@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$packageName = 'oasis-weather-notify'
+$packageName = 'oasis'
 $versionLine = Select-String -Path Cargo.toml -Pattern '^version\s*=' | Select-Object -First 1
 $version = $versionLine.Line.Split('"')[1]
 
