@@ -40,7 +40,9 @@ impl HotkeyConfig {
     }
 
     pub fn secondary_str(&self) -> &str {
-        self.secondary.as_deref().unwrap_or(DEFAULT_SECONDARY_HOTKEY)
+        self.secondary
+            .as_deref()
+            .unwrap_or(DEFAULT_SECONDARY_HOTKEY)
     }
 }
 

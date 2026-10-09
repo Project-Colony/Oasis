@@ -52,7 +52,9 @@ fn main() -> Result<()> {
         eprintln!("Exemple pour Sway (~/.config/sway/config):");
         eprintln!("  bindsym Mod4+Shift+w exec oasis-weather-notify --trigger");
         eprintln!();
-        eprintln!("Lancement en mode daemon malgré tout (les raccourcis pourraient ne pas fonctionner)...");
+        eprintln!(
+            "Lancement en mode daemon malgré tout (les raccourcis pourraient ne pas fonctionner)..."
+        );
     }
 
     run_daemon(&config)
@@ -148,9 +150,7 @@ fn run_daemon(config: &Config) -> Result<()> {
                     Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
                     Trigger::Manual => println!("Déclenchement manuel, récupération météo..."),
                 }
-                if let Err(error) =
-                    handle_hotkey(&client, &config, &cache_for_runtime).await
-                {
+                if let Err(error) = handle_hotkey(&client, &config, &cache_for_runtime).await {
                     eprintln!("Erreur lors de la récupération météo: {error:#}");
                 }
             }
