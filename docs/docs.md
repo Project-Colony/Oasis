@@ -46,14 +46,15 @@ All the code is one binary crate, one flat file per module under `src/`:
 | `location.rs` | IP geolocation, with the fallback service |
 | `weather.rs` | The Open-Meteo request and the weather code descriptions and icons |
 | `cache.rs` | The in-memory location and weather caches |
-| `config.rs` | The TOML config file and its defaults |
+| `config.rs` | The TOML config file, its location, its defaults and the one-time move from the old location |
 | `hotkey.rs` | Parsing the hotkey strings from the config |
 | `notification.rs` | The native notification on each OS |
 
 ## Security and privacy
 
-- Oasis writes nothing to disk: both caches live in memory and are gone when
-  it exits.
+- Both caches live in memory and are gone when Oasis exits. The only thing
+  Oasis writes to disk is the one-time copy of a config file from an earlier
+  version, plus its `.migrated` marker.
 - It only makes network requests when you trigger a lookup, and the caches
   avoid repeating them.
 - There is no way yet to turn IP geolocation off or to set a fixed location.
