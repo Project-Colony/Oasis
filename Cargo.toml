@@ -1,5 +1,5 @@
 [package]
-name = "oasis-weather-notify"
+name = "oasis"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.89"
@@ -29,3 +29,8 @@ windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging"] 
 
 [target.'cfg(target_os = "macos")'.dependencies]
 mac-notification-sys = "0.6.15"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

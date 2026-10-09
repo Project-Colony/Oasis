@@ -21,7 +21,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
    ```
 4. Run the application:
    ```bash
-   ./target/release/oasis-weather-notify
+   ./target/release/oasis
    ```
 
 ### Notifications
@@ -41,7 +41,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
    ```
 3. Run the application:
    ```bash
-   ./target/release/oasis-weather-notify
+   ./target/release/oasis
    ```
 
 ### Notifications
@@ -60,7 +60,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
    ```
 3. Run the application:
    ```powershell
-   .\target\release\oasis-weather-notify.exe
+   .\target\release\oasis.exe
    ```
 
 ### Notifications

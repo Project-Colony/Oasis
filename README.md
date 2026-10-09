@@ -27,7 +27,7 @@ Linux).
 
 ```bash
 cargo build --release
-./target/release/oasis-weather-notify
+./target/release/oasis
 ```
 
 `scripts/build.sh`, `scripts/release.sh` and `scripts/release.ps1` wrap the
@@ -37,13 +37,15 @@ release build and packaging. See `docs/installation.md` for per-OS notes.
 
 - Daemon mode (default): listens for the global hotkey. Press Enter or type `w`
   in the terminal to trigger a notification by hand, and type `quit` to exit.
-- One-shot mode: `oasis-weather-notify --trigger` shows one notification and exits.
+- One-shot mode: `oasis --trigger` shows one notification and exits.
+- `oasis --version` prints the version and `oasis --help` lists the options.
+  Any other argument is an error (exit code 2).
 
 Global hotkeys need X11 or XWayland. On pure Wayland, bind the one-shot mode in
 your compositor instead, for example on Hyprland:
 
 ```
-bind = SUPER SHIFT, W, exec, oasis-weather-notify --trigger
+bind = SUPER SHIFT, W, exec, oasis --trigger
 ```
 
 ## Configuration
