@@ -1,35 +1,48 @@
 # Docs
 
 ## Description
-Oasis Weather Notify est un outil desktop multiplateforme qui affiche la météo actuelle sur demande via un raccourci clavier global. La localisation est dérivée de l'adresse IP (avec fallback), puis la météo est récupérée via Open-Meteo.
 
-## API utilisées
-### Géolocalisation IP
-- Primaire : `https://ipapi.co/json/`
-- Fallback : `https://ipwho.is/`
+Oasis Weather Notify is a cross-platform desktop tool that shows the current
+weather on demand, from a global hotkey. It derives your location from your IP
+address (with a fallback service), then fetches the weather from Open-Meteo.
 
-### Météo
-- Open-Meteo (gratuit, sans clé)
+## Services used
 
-## Fonctionnement détaillé
-1. Le service s'exécute en arrière-plan.
-2. L'utilisateur déclenche un raccourci clavier.
-3. L'app obtient la localisation via IP.
-4. L'app appelle l'API météo avec lat/long.
-5. L'app affiche une notification système.
+### IP geolocation
 
-## Choix techniques validés
-- Hotkeys globales : `global-hotkey`.
-- Notifications par OS : `notify-rust` (Linux), `tauri-winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
+- Primary: `https://ipapi.co/json/`
+- Fallback: `https://ipwho.is/`
 
-## Choix techniques finalisés
-- Configuration via fichier TOML (avec valeurs par défaut).
-- Cache de la localisation (TTL long) + cache météo (TTL court).
+### Weather
 
-## Sécurité & vie privée
-- Ne stocker aucune donnée personnelle.
-- Minimiser les requêtes réseau.
-- Permettre l'opt-out de la géolocalisation.
+- Open-Meteo (free, no API key)
+
+## How it works
+
+1. Oasis runs in the background.
+2. You press the global hotkey.
+3. Oasis looks up your location from your IP address.
+4. Oasis asks Open-Meteo for the weather at that latitude and longitude.
+5. Oasis shows a native notification.
+
+## Technical choices
+
+- Global hotkeys: `global-hotkey`.
+- Notifications per OS: `notify-rust` (Linux), `tauri-winrt-notification` with
+  a MessageBox fallback (Windows), `mac-notification-sys` (macOS).
+- Configuration from an optional TOML file, with defaults.
+- The location is cached for a long time (one day by default) and the weather
+  for a short time (five minutes by default).
+
+## Security and privacy
+
+- Oasis writes nothing to disk: both caches live in memory and are gone when
+  it exits.
+- It only makes network requests when you trigger a lookup, and the caches
+  avoid repeating them.
+- There is no way yet to turn IP geolocation off or to set a fixed location.
 
 ## Installation
-Voir `docs/installation.md` pour les instructions par OS et les scripts de build/release.
+
+See `docs/installation.md` for per-OS instructions and the build and release
+scripts.

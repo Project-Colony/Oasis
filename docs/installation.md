@@ -1,58 +1,74 @@
 # Installation
 
-Ce guide décrit comment installer et utiliser Oasis Weather Notify sur chaque OS.
+This guide covers building and running Oasis Weather Notify on each OS.
 
-## Prérequis communs
-- Rust + Cargo installés si vous compilez depuis les sources.
-- Un accès réseau sortant pour les appels IP + météo.
+## Common requirements
+
+- Rust and Cargo, version 1.89 or newer, to build from source.
+- Outbound network access for the IP and weather lookups.
 
 ## Linux
-### Installation depuis les sources
-1. Cloner le dépôt.
-2. Compiler en release :
+
+### Build from source
+
+1. Install the GTK 3 development files, which the event loop links against:
+   `libgtk-3-dev` on Debian and Ubuntu, `gtk3` on Arch Linux, `gtk3-devel` on
+   Fedora.
+2. Clone the repository.
+3. Build in release mode:
    ```bash
    ./scripts/build.sh
    ```
-3. Lancer l'application :
+4. Run the application:
    ```bash
    ./target/release/oasis-weather-notify
    ```
 
 ### Notifications
-- Les notifications reposent sur `notify-rust` (souvent via `libnotify`).
-- Sur certaines distributions, installez `libnotify` si nécessaire.
+
+- Notifications go through `notify-rust`, which talks to your desktop's
+  notification daemon over D-Bus.
+- Make sure a notification daemon is running (most desktops ship one).
 
 ## macOS
-### Installation depuis les sources
-1. Cloner le dépôt.
-2. Compiler en release :
+
+### Build from source
+
+1. Clone the repository.
+2. Build in release mode:
    ```bash
    ./scripts/build.sh
    ```
-3. Lancer l'application :
+3. Run the application:
    ```bash
    ./target/release/oasis-weather-notify
    ```
 
 ### Notifications
-- Les notifications utilisent `mac-notification-sys`.
-- macOS peut demander l'autorisation d'afficher des notifications.
+
+- Notifications use `mac-notification-sys`.
+- macOS may ask for permission to show notifications.
 
 ## Windows
-### Installation depuis les sources (PowerShell)
-1. Cloner le dépôt.
-2. Compiler en release :
+
+### Build from source (PowerShell)
+
+1. Clone the repository.
+2. Build in release mode:
    ```powershell
    .\scripts\release.ps1
    ```
-3. Lancer l'application :
+3. Run the application:
    ```powershell
    .\target\release\oasis-weather-notify.exe
    ```
 
 ### Notifications
-- Les notifications utilisent `tauri-winrt-notification` avec fallback MessageBox.
-- Vérifiez que l'application est autorisée à afficher des notifications.
+
+- Notifications use `tauri-winrt-notification`, with a MessageBox fallback.
+- Check that notifications are allowed for the application.
 
 ## Configuration
-Un fichier TOML optionnel permet de personnaliser les raccourcis et le cache. Voir le README pour les détails et l'exemple de configuration.
+
+An optional TOML file sets the hotkeys, the cache lifetimes and the temperature
+unit. See the README for the details and an example.
