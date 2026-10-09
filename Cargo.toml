@@ -9,21 +9,23 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/Project-Colony/Oasis"
 
 [dependencies]
-anyhow = "1.0.100"
-serde = { version = "1.0.228", features = ["derive"] }
-reqwest = { version = "0.13.1", features = ["json", "rustls"] }
-tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
-toml = "0.9.7"
+anyhow = "1.0.104"
+serde = { version = "1.0.229", features = ["derive"] }
+reqwest = { version = "0.13.5", features = ["json", "rustls"] }
+tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread"] }
+toml = "1.1.7"
 
-global-hotkey = "0.7.0"
-tao = "0.34.5"
+global-hotkey = "0.8.0"
+# tao 0.37 enables its dbus feature by default (the XDG portal colour scheme for
+# windows). Oasis opens no window, so keep the 0.34 feature set and skip libdbus.
+tao = { version = "0.37.1", default-features = false, features = ["rwh_06", "x11"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-notify-rust = "4.11.7"
+notify-rust = "4.18.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 tauri-winrt-notification = "0.8.1"
 windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-mac-notification-sys = "0.6.9"
+mac-notification-sys = "0.6.15"
