@@ -4,12 +4,23 @@ use anyhow::{Context, Result};
 pub fn send_notification(title: &str, body: &str) -> Result<()> {
     notify_rust::Notification::new()
         .summary(title)
-        .body(body)
+        .body(&escape_markup(body))
         .show()
         .context("Notification Linux (notify-rust) échouée")?;
     Ok(())
 }
 
+/// The freedesktop spec reads the body as markup, and its place names come from the
+/// IP lookup services. The summary is plain text, so it stays as is.
+#[cfg(target_os = "linux")]
+fn escape_markup(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+// Windows needs no escaping: tauri-winrt-notification sets the toast text through
+// the XML DOM (SetInnerText). macOS notifications take plain strings.
 #[cfg(target_os = "windows")]
 pub fn send_notification(title: &str, body: &str) -> Result<()> {
     if let Err(error) = send_windows_toast(title, body) {
@@ -62,4 +73,19 @@ pub fn send_notification(title: &str, body: &str) -> Result<()> {
         .send()
         .context("Notification macOS (mac-notification-sys) échouée")?;
     Ok(())
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn escape_markup_escapes_markup_characters() {
+        assert_eq!(
+            escape_markup("<b>Tom & Jerry</b>"),
+            "&lt;b&gt;Tom &amp; Jerry&lt;/b&gt;"
+        );
+        assert_eq!(escape_markup("&lt;"), "&amp;lt;");
+        assert_eq!(escape_markup("Paris, France"), "Paris, France");
+    }
 }
