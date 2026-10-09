@@ -2,6 +2,7 @@
 name = "oasis-weather-notify"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.89"
 
 description = "Global hotkey weather notification app (IP geolocation + current conditions)."
 license = "GPL-3.0-or-later"

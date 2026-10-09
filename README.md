@@ -21,7 +21,9 @@ MessageBox fallback on Windows, and `mac-notification-sys` on macOS.
 
 ## Build from source
 
-You need a recent stable Rust toolchain (edition 2024) and network access.
+You need Rust 1.89 or newer and network access. On Linux you also need the
+GTK 3 development files (`libgtk-3-dev` on Debian and Ubuntu, `gtk3` on Arch
+Linux).
 
 ```bash
 cargo build --release
