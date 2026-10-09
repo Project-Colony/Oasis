@@ -52,13 +52,20 @@ bind = SUPER SHIFT, W, exec, oasis --trigger
 
 Oasis reads an optional TOML file and falls back to defaults when it is missing.
 If the file exists but cannot be read or parsed, Oasis prints a warning with the
-path and the error, then runs with the defaults. It looks for the file in this
-order:
+path and the error, then runs with the defaults. `OASIS_CONFIG_PATH` points it
+at another file. Otherwise the file lives in the shared Colony folder:
 
-- `OASIS_CONFIG_PATH`
-- `$XDG_CONFIG_HOME/oasis/config.toml`
-- `$HOME/.config/oasis/config.toml`
-- `%APPDATA%\Oasis\config.toml` (Windows)
+| OS | Path |
+|---|---|
+| Linux | `~/.config/Colony/Oasis/preferences/config.toml` |
+| Windows | `%LOCALAPPDATA%\Colony\Oasis\preferences\config.toml` |
+| macOS | `~/Library/Application Support/Colony/Oasis/preferences/config.toml` |
+
+Earlier versions read `$XDG_CONFIG_HOME/oasis/config.toml`,
+`~/.config/oasis/config.toml` or `%APPDATA%\Oasis\config.toml`. On the first
+launch without a new file, Oasis copies the old one to the new path, prints both
+paths and writes a `.migrated` marker next to it, so the copy happens once. The
+old file is left in place. If the copy fails, Oasis keeps reading the old file.
 
 ```toml
 [hotkeys]

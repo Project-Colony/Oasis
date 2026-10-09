@@ -71,4 +71,11 @@ This guide covers building and running Oasis Weather Notify on each OS.
 ## Configuration
 
 An optional TOML file sets the hotkeys, the cache lifetimes and the temperature
-unit. See the README for the details and an example.
+unit:
+
+- Linux: `~/.config/Colony/Oasis/preferences/config.toml`
+- Windows: `%LOCALAPPDATA%\Colony\Oasis\preferences\config.toml`
+- macOS: `~/Library/Application Support/Colony/Oasis/preferences/config.toml`
+
+A config from an earlier version is copied there once, on the first launch. See
+the README for the details and an example.

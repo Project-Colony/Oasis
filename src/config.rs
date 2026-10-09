@@ -9,6 +9,11 @@ const DEFAULT_SECONDARY_HOTKEY: &str = "Super+Shift+W";
 pub const DEFAULT_LOCATION_TTL_SECONDS: u64 = 60 * 60 * 24;
 pub const DEFAULT_WEATHER_TTL_SECONDS: u64 = 60 * 5;
 
+/// The directory name under `Colony/`, spelled as the program spells it.
+const PROGRAM: &str = "Oasis";
+/// Written next to the new config once the legacy file has been copied.
+const MIGRATION_MARKER: &str = ".migrated";
+
 #[derive(Debug, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
@@ -111,16 +116,31 @@ fn load_config_from(path: &Path) -> Result<Config> {
         .with_context(|| format!("cannot parse the config file {}", path.display()))
 }
 
+/// The file Oasis reads: `OASIS_CONFIG_PATH` when set, otherwise
+/// `<config>/Colony/Oasis/preferences/config.toml`, after a one-time copy from
+/// the location earlier releases used.
 fn config_path() -> Option<PathBuf> {
-    if let Ok(path) = env::var("OASIS_CONFIG_PATH") {
+    if let Some(path) = env::var_os("OASIS_CONFIG_PATH") {
         return Some(PathBuf::from(path));
     }
 
-    if let Ok(xdg) = env::var("XDG_CONFIG_HOME") {
+    let legacy = legacy_config_path();
+    // `locate` creates nothing: a normal launch leaves no empty directory behind.
+    let Ok(dir) = colony_ui::paths::locate::config_dir(PROGRAM) else {
+        return legacy;
+    };
+    Some(resolve_config_path(
+        &dir.join("preferences").join("config.toml"),
+        legacy.as_deref(),
+    ))
+}
+
+/// The file releases before the Colony layout read, chosen the same way they did.
+fn legacy_config_path() -> Option<PathBuf> {
+    if let Some(xdg) = env::var_os("XDG_CONFIG_HOME") {
         return Some(PathBuf::from(xdg).join("oasis").join("config.toml"));
     }
-
-    if let Ok(home) = env::var("HOME") {
+    if let Some(home) = env::var_os("HOME") {
         return Some(
             PathBuf::from(home)
                 .join(".config")
@@ -128,12 +148,53 @@ fn config_path() -> Option<PathBuf> {
                 .join("config.toml"),
         );
     }
+    env::var_os("APPDATA").map(|appdata| PathBuf::from(appdata).join("Oasis").join("config.toml"))
+}
 
-    if let Ok(appdata) = env::var("APPDATA") {
-        return Some(PathBuf::from(appdata).join("Oasis").join("config.toml"));
+/// Picks the file to read and copies the legacy file to `new` on first run.
+///
+/// A marker next to `new` records the copy, so a user who later deletes the new
+/// file gets the defaults rather than the old file again. The legacy file is
+/// never deleted. If the copy fails, Oasis keeps reading the legacy file.
+fn resolve_config_path(new: &Path, legacy: Option<&Path>) -> PathBuf {
+    let marker = new.with_file_name(MIGRATION_MARKER);
+    if new.exists() || marker.exists() {
+        return new.to_path_buf();
     }
+    let Some(legacy) = legacy.filter(|path| path.is_file()) else {
+        return new.to_path_buf();
+    };
 
-    None
+    match migrate(legacy, new, &marker) {
+        Ok(()) => {
+            println!(
+                "Oasis copied its config from {} to {}.",
+                legacy.display(),
+                new.display()
+            );
+            new.to_path_buf()
+        }
+        Err(error) => {
+            eprintln!(
+                "Warning: cannot copy the config from {} to {}: {error}. Oasis keeps reading the old file.",
+                legacy.display(),
+                new.display()
+            );
+            legacy.to_path_buf()
+        }
+    }
+}
+
+fn migrate(legacy: &Path, new: &Path, marker: &Path) -> std::io::Result<()> {
+    if let Some(dir) = new.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    if let Err(error) = fs::copy(legacy, new) {
+        // A half-written copy would win over the legacy file on the next launch.
+        let _ = fs::remove_file(new);
+        return Err(error);
+    }
+    fs::write(marker, legacy.display().to_string())
 }
 
 #[cfg(test)]
@@ -162,5 +223,91 @@ mod tests {
         fs::remove_file(&path).unwrap();
         let error = format!("{:#}", result.unwrap_err());
         assert!(error.contains(&path.display().to_string()), "{error}");
+    }
+
+    /// A fresh, empty directory per test, so no real home is touched.
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = temp_path(name);
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn new_config(root: &Path) -> PathBuf {
+        root.join("Colony/Oasis/preferences/config.toml")
+    }
+
+    fn legacy_config(root: &Path, content: &str) -> PathBuf {
+        let legacy = root.join("oasis/config.toml");
+        fs::create_dir_all(legacy.parent().unwrap()).unwrap();
+        fs::write(&legacy, content).unwrap();
+        legacy
+    }
+
+    #[test]
+    fn new_config_wins_over_legacy() {
+        let root = temp_dir("new-wins");
+        let legacy = legacy_config(&root, "old");
+        let new = new_config(&root);
+        fs::create_dir_all(new.parent().unwrap()).unwrap();
+        fs::write(&new, "new").unwrap();
+
+        assert_eq!(resolve_config_path(&new, Some(&legacy)), new);
+        assert_eq!(fs::read_to_string(&new).unwrap(), "new");
+        assert!(!new.with_file_name(MIGRATION_MARKER).exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn legacy_config_is_copied_once_and_kept() {
+        let root = temp_dir("migrate");
+        let legacy = legacy_config(&root, "[weather]\ntemperature_unit = \"fahrenheit\"\n");
+        let new = new_config(&root);
+
+        assert_eq!(resolve_config_path(&new, Some(&legacy)), new);
+        assert_eq!(
+            fs::read_to_string(&new).unwrap(),
+            fs::read_to_string(&legacy).unwrap()
+        );
+        assert!(new.with_file_name(MIGRATION_MARKER).exists());
+        assert!(legacy.exists());
+        let config = load_config_from(&new).unwrap();
+        assert!(matches!(
+            config.weather.temperature_unit,
+            TemperatureUnit::Fahrenheit
+        ));
+
+        // The user deletes the new file: the marker stops a second copy.
+        fs::remove_file(&new).unwrap();
+        assert_eq!(resolve_config_path(&new, Some(&legacy)), new);
+        assert!(!new.exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn failed_copy_falls_back_to_legacy() {
+        let root = temp_dir("copy-fails");
+        let legacy = legacy_config(&root, "old");
+        // A file where the Colony directory should be makes create_dir_all fail.
+        fs::write(root.join("Colony"), "").unwrap();
+        let new = new_config(&root);
+
+        assert_eq!(resolve_config_path(&new, Some(&legacy)), legacy);
+        assert!(legacy.exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn no_legacy_config_gives_the_new_path_untouched() {
+        let root = temp_dir("fresh");
+        let new = new_config(&root);
+
+        assert_eq!(
+            resolve_config_path(&new, Some(&root.join("missing.toml"))),
+            new
+        );
+        assert_eq!(resolve_config_path(&new, None), new);
+        assert!(!root.join("Colony").exists());
+        fs::remove_dir_all(&root).unwrap();
     }
 }
