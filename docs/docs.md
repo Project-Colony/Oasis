@@ -20,7 +20,7 @@ Oasis Weather Notify est un outil desktop multiplateforme qui affiche la météo
 
 ## Choix techniques validés
 - Hotkeys globales : `global-hotkey`.
-- Notifications par OS : `notify-rust` (Linux), `winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
+- Notifications par OS : `notify-rust` (Linux), `tauri-winrt-notification` + fallback MessageBox (Windows), `mac-notification-sys` (macOS).
 
 ## Choix techniques finalisés
 - Configuration via fichier TOML (avec valeurs par défaut).

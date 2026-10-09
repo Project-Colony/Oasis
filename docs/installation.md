@@ -51,7 +51,7 @@ Ce guide décrit comment installer et utiliser Oasis Weather Notify sur chaque O
    ```
 
 ### Notifications
-- Les notifications utilisent `winrt-notification` avec fallback MessageBox.
+- Les notifications utilisent `tauri-winrt-notification` avec fallback MessageBox.
 - Vérifiez que l'application est autorisée à afficher des notifications.
 
 ## Configuration

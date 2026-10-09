@@ -21,11 +21,11 @@ pub fn send_notification(title: &str, body: &str) -> Result<()> {
 
 #[cfg(target_os = "windows")]
 fn send_windows_toast(title: &str, body: &str) -> Result<()> {
-    winrt_notification::Toast::new(winrt_notification::Toast::POWERSHELL_APP_ID)
+    tauri_winrt_notification::Toast::new(tauri_winrt_notification::Toast::POWERSHELL_APP_ID)
         .title(title)
         .text1(body)
         .show()
-        .context("Notification Windows (winrt-notification) échouée")
+        .context("Notification Windows (tauri-winrt-notification) échouée")
 }
 
 #[cfg(target_os = "windows")]
