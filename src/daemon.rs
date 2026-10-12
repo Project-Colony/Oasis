@@ -1,5 +1,6 @@
 use crate::cache::AppCache;
 use crate::config::Config;
+use crate::i18n::{t, t_fmt};
 use crate::{hotkey, lookup};
 use anyhow::{Context, Result};
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
@@ -62,21 +63,7 @@ pub fn build_runtime() -> Result<(Runtime, reqwest::Client)> {
 /// Daemon mode: listens for the global hotkeys until `quit` (X11/XWayland).
 pub fn run_daemon(config: Config) -> Result<()> {
     if is_wayland() {
-        eprintln!("Attention: Wayland détecté sans serveur X11.");
-        eprintln!("Les raccourcis globaux ne fonctionnent pas sous Wayland pur.");
-        eprintln!("Utilisez le mode one-shot avec votre compositeur:");
-        eprintln!();
-        eprintln!("  oasis --trigger");
-        eprintln!();
-        eprintln!("Exemple pour Hyprland (~/.config/hypr/hyprland.conf):");
-        eprintln!("  bind = SUPER SHIFT, W, exec, oasis --trigger");
-        eprintln!();
-        eprintln!("Exemple pour Sway (~/.config/sway/config):");
-        eprintln!("  bindsym Mod4+Shift+w exec oasis --trigger");
-        eprintln!();
-        eprintln!(
-            "Lancement en mode daemon malgré tout (les raccourcis pourraient ne pas fonctionner)..."
-        );
+        eprintln!("{}", t("wayland_hint"));
     }
 
     let (runtime, client) = build_runtime()?;
@@ -85,13 +72,19 @@ pub fn run_daemon(config: Config) -> Result<()> {
     let primary_str = config.hotkeys.primary_str();
     let secondary_str = config.hotkeys.secondary_str();
 
-    println!("Oasis Weather Notify - prêt.");
-    println!("Raccourcis: {primary_str} (AZERTY) ou {secondary_str} (QWERTY).");
-    println!("Astuce: appuyez sur Entrée (ou tapez 'w') pour déclencher manuellement.");
-    println!("Tapez 'quit' pour quitter.");
+    println!("{}", t("daemon_ready"));
+    println!(
+        "{}",
+        t_fmt(
+            "daemon_hotkeys",
+            &[("primary", primary_str), ("secondary", secondary_str)]
+        )
+    );
+    println!("{}", t("daemon_manual_hint"));
+    println!("{}", t("daemon_quit_hint"));
 
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
-    let manager = GlobalHotKeyManager::new().context("Échec init manager hotkey")?;
+    let manager = GlobalHotKeyManager::new().context("cannot start the global hotkey manager")?;
 
     let default_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyW);
     let hotkey_azerty = hotkey::parse_hotkey(primary_str, default_hotkey);
@@ -100,16 +93,24 @@ pub fn run_daemon(config: Config) -> Result<()> {
     if hotkey_azerty == hotkey_qwerty {
         manager
             .register(hotkey_azerty)
-            .context("Échec enregistrement raccourci")?;
-        println!("Raccourci actif: {hotkey_azerty:?}");
+            .context("cannot register the hotkey")?;
+        let hotkey = format!("{hotkey_azerty:?}");
+        println!("{}", t_fmt("active_hotkey", &[("hotkey", &hotkey)]));
     } else {
         manager
             .register(hotkey_azerty)
-            .context("Échec enregistrement raccourci primaire")?;
+            .context("cannot register the primary hotkey")?;
         manager
             .register(hotkey_qwerty)
-            .context("Échec enregistrement raccourci secondaire")?;
-        println!("Raccourcis actifs: {hotkey_azerty:?} et {hotkey_qwerty:?}");
+            .context("cannot register the secondary hotkey")?;
+        let (primary, secondary) = (format!("{hotkey_azerty:?}"), format!("{hotkey_qwerty:?}"));
+        println!(
+            "{}",
+            t_fmt(
+                "active_hotkeys",
+                &[("primary", &primary), ("secondary", &secondary)]
+            )
+        );
     }
 
     let receiver = GlobalHotKeyEvent::receiver();
@@ -140,12 +141,13 @@ pub fn run_daemon(config: Config) -> Result<()> {
         runtime.block_on(async move {
             while let Some(trigger) = rx.recv().await {
                 match trigger {
-                    Trigger::Hotkey => println!("Raccourci détecté, récupération météo..."),
-                    Trigger::Manual => println!("Déclenchement manuel, récupération météo..."),
+                    Trigger::Hotkey => println!("{}", t("hotkey_pressed")),
+                    Trigger::Manual => println!("{}", t("manual_trigger")),
                 }
                 if let Err(error) = lookup::show_weather(&client, &config, &cache_for_runtime).await
                 {
-                    eprintln!("Erreur lors de la récupération météo: {error:#}");
+                    let error = format!("{error:#}");
+                    eprintln!("{}", t_fmt("lookup_failed", &[("error", &error)]));
                 }
             }
         });

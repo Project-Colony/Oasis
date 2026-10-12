@@ -1,5 +1,6 @@
 use crate::cache::{self, AppCache};
 use crate::config::{Config, DEFAULT_LOCATION_TTL_SECONDS, DEFAULT_WEATHER_TTL_SECONDS};
+use crate::i18n::{t, t_fmt};
 use crate::{daemon, notification, weather};
 use anyhow::Result;
 use std::sync::Arc;
@@ -14,7 +15,8 @@ pub fn run_trigger(config: &Config) -> Result<()> {
 }
 
 /// Looks up the location and the weather, then shows them in a notification.
-/// A failed lookup is reported in the notification, not returned as an error.
+/// A failed lookup is reported in the notification, not returned as an error:
+/// the notification says what failed, the English error chain goes to stderr.
 pub async fn show_weather(
     client: &reqwest::Client,
     config: &Config,
@@ -33,13 +35,7 @@ pub async fn show_weather(
     .await
     {
         Ok(location) => location,
-        Err(error) => {
-            notification::send_notification(
-                "Météo indisponible",
-                &format!("Impossible de récupérer la localisation.\n{error:#}"),
-            )?;
-            return Ok(());
-        }
+        Err(error) => return report_failure(t("could_not_get_location"), &error),
     };
 
     let weather_data = match cache::get_weather_with_cache(
@@ -58,21 +54,13 @@ pub async fn show_weather(
     .await
     {
         Ok(w) => w,
-        Err(error) => {
-            notification::send_notification(
-                "Météo indisponible",
-                &format!("Impossible de récupérer la météo.\n{error:#}"),
-            )?;
-            return Ok(());
-        }
+        Err(error) => return report_failure(t("could_not_get_weather"), &error),
     };
 
     let icon = weather::weather_icon(weather_data.weather_code);
-    let title = format!(
-        "{icon} Météo actuelle - {}",
-        location.city.as_deref().unwrap_or("Localisation inconnue")
-    );
-    let description = weather::weather_description(weather_data.weather_code);
+    let city = location.city.as_deref().unwrap_or(t("unknown_location"));
+    let title = format!("{icon} {}", t_fmt("current_weather", &[("city", city)]));
+    let description = t(weather::weather_description(weather_data.weather_code));
     let body = format!(
         "{description} • {:.0}{}",
         weather_data.temperature_2m,
@@ -94,4 +82,9 @@ pub async fn show_weather(
 
     notification::send_notification(&title, &full_body)?;
     Ok(())
+}
+
+fn report_failure(summary: &str, error: &anyhow::Error) -> Result<()> {
+    eprintln!("{summary}: {error:#}");
+    notification::send_notification(t("weather_unavailable"), summary)
 }

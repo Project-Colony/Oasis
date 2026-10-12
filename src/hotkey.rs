@@ -1,6 +1,8 @@
 use anyhow::{Context, Result, anyhow};
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 
+use crate::i18n::t_fmt;
+
 const KEYS: &[(char, Code)] = &[
     ('A', Code::KeyA),
     ('B', Code::KeyB),
@@ -44,7 +46,14 @@ pub fn parse_hotkey(configured: &str, fallback: HotKey) -> HotKey {
     match parse_hotkey_inner(configured) {
         Ok(hotkey) => hotkey,
         Err(error) => {
-            eprintln!("Hotkey invalide '{configured}', fallback utilisé: {error:#}");
+            let error = format!("{error:#}");
+            eprintln!(
+                "{}",
+                t_fmt(
+                    "invalid_hotkey",
+                    &[("hotkey", configured), ("error", &error)]
+                )
+            );
             fallback
         }
     }
@@ -58,7 +67,7 @@ fn parse_hotkey_inner(configured: &str) -> Result<HotKey> {
         .collect();
 
     if parts.is_empty() {
-        return Err(anyhow!("Hotkey vide"));
+        return Err(anyhow!("empty hotkey"));
     }
 
     let mut modifiers = Modifiers::empty();
@@ -72,14 +81,14 @@ fn parse_hotkey_inner(configured: &str) -> Result<HotKey> {
             "super" | "meta" | "cmd" | "command" | "win" => modifiers |= Modifiers::SUPER,
             key => {
                 if code.is_some() {
-                    return Err(anyhow!("Trop de touches principales"));
+                    return Err(anyhow!("more than one main key"));
                 }
                 code = Some(parse_key_code(key)?);
             }
         }
     }
 
-    let code = code.context("Touche principale manquante")?;
+    let code = code.context("missing main key")?;
     Ok(HotKey::new(Some(modifiers), code))
 }
 
@@ -91,7 +100,7 @@ fn parse_key_code(key: &str) -> Result<Code> {
     {
         return Ok(code);
     }
-    Err(anyhow!("Touche invalide: {key}"))
+    Err(anyhow!("invalid key: {key}"))
 }
 
 #[cfg(test)]

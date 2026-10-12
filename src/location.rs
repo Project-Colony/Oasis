@@ -1,6 +1,8 @@
 use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 
+use crate::i18n::t_fmt;
+
 const IP_GEOLOCATION_URL: &str = "https://ipapi.co/json/";
 const IP_GEOLOCATION_FALLBACK_URL: &str = "https://ipwho.is/";
 
@@ -37,7 +39,8 @@ pub async fn fetch_ip_location(client: &reqwest::Client) -> Result<Location> {
     match fetch_ip_location_ipapi(client).await {
         Ok(location) => Ok(location),
         Err(error) => {
-            eprintln!("Géolocalisation IP principale indisponible, fallback: {error:#}");
+            let error = format!("{error:#}");
+            eprintln!("{}", t_fmt("ip_lookup_fallback", &[("error", &error)]));
             fetch_ip_location_ipwho(client).await
         }
     }
@@ -48,15 +51,19 @@ async fn fetch_ip_location_ipapi(client: &reqwest::Client) -> Result<Location> {
         .get(IP_GEOLOCATION_URL)
         .send()
         .await
-        .context("Échec requête géolocalisation IP")?
+        .context("the IP geolocation request failed")?
         .error_for_status()
-        .context("Erreur HTTP géolocalisation IP")?
+        .context("the IP geolocation service returned an HTTP error")?
         .json::<IpApiResponse>()
         .await
-        .context("Échec parsing géolocalisation IP")?;
+        .context("cannot parse the IP geolocation response")?;
 
-    let latitude = response.latitude.context("Latitude manquante")?;
-    let longitude = response.longitude.context("Longitude manquante")?;
+    let latitude = response
+        .latitude
+        .context("the IP geolocation response has no latitude")?;
+    let longitude = response
+        .longitude
+        .context("the IP geolocation response has no longitude")?;
 
     Ok(Location {
         city: response.city,
@@ -72,24 +79,27 @@ async fn fetch_ip_location_ipwho(client: &reqwest::Client) -> Result<Location> {
         .get(IP_GEOLOCATION_FALLBACK_URL)
         .send()
         .await
-        .context("Échec requête géolocalisation IP (fallback)")?
+        .context("the fallback IP geolocation request failed")?
         .error_for_status()
-        .context("Erreur HTTP géolocalisation IP (fallback)")?
+        .context("the fallback IP geolocation service returned an HTTP error")?
         .json::<IpWhoIsResponse>()
         .await
-        .context("Échec parsing géolocalisation IP (fallback)")?;
+        .context("cannot parse the fallback IP geolocation response")?;
 
     if !response.success {
         let message = response
             .message
-            .unwrap_or_else(|| "Réponse fallback invalide".to_string());
-        return Err(anyhow!(message)).context("Géolocalisation IP fallback refusée");
+            .unwrap_or_else(|| "no reason given".to_string());
+        return Err(anyhow!(message))
+            .context("the fallback IP geolocation service refused the lookup");
     }
 
-    let latitude = response.latitude.context("Latitude manquante (fallback)")?;
+    let latitude = response
+        .latitude
+        .context("the fallback IP geolocation response has no latitude")?;
     let longitude = response
         .longitude
-        .context("Longitude manquante (fallback)")?;
+        .context("the fallback IP geolocation response has no longitude")?;
 
     Ok(Location {
         city: response.city,

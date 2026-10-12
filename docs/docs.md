@@ -33,13 +33,17 @@ address (with a fallback service), then fetches the weather from Open-Meteo.
 - Notifications per OS: `notify-rust` (Linux), `tauri-winrt-notification` with
   a MessageBox fallback (Windows), `mac-notification-sys` (macOS).
 - Configuration from an optional TOML file, with defaults.
+- Console messages and notifications in English or French, from the system
+  language (`sys-locale`) or `[general] language` in the config. The error
+  details printed to stderr stay in English.
 - In daemon mode, the location is cached for a long time (one day by default)
   and the weather for a short time (five minutes by default). `--trigger` runs
   one lookup per process, so it caches nothing.
 
 ### Module map
 
-All the code is one binary crate, one flat file per module under `src/`:
+All the code is one binary crate: one file per module under `src/`, plus the
+`i18n/` directory:
 
 | Module | What lives there |
 |---|---|
@@ -47,11 +51,12 @@ All the code is one binary crate, one flat file per module under `src/`:
 | `daemon.rs` | Daemon mode: hotkey registration, the event loop, stdin commands, the Wayland hint |
 | `lookup.rs` | One lookup: location, weather, notification text, then the notification (`--trigger` mode too) |
 | `location.rs` | IP geolocation, with the fallback service |
-| `weather.rs` | The Open-Meteo request and the weather code descriptions and icons |
+| `weather.rs` | The Open-Meteo request, the weather code icons and the i18n keys of their descriptions |
 | `cache.rs` | The in-memory location and weather caches |
 | `config.rs` | The TOML config file, its location, its defaults and the one-time move from the old location |
 | `hotkey.rs` | Parsing the hotkey strings from the config |
 | `notification.rs` | The native notification on each OS |
+| `i18n/` | The English (`en.rs`) and French (`fr.rs`) strings, `t()` and the language choice |
 
 ## Security and privacy
 

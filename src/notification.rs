@@ -6,7 +6,7 @@ pub fn send_notification(title: &str, body: &str) -> Result<()> {
         .summary(title)
         .body(&escape_markup(body))
         .show()
-        .context("Notification Linux (notify-rust) échouée")?;
+        .context("the Linux notification (notify-rust) failed")?;
     Ok(())
 }
 
@@ -24,7 +24,11 @@ fn escape_markup(text: &str) -> String {
 #[cfg(target_os = "windows")]
 pub fn send_notification(title: &str, body: &str) -> Result<()> {
     if let Err(error) = send_windows_toast(title, body) {
-        eprintln!("Échec notification Windows, fallback MessageBox: {error:#}");
+        let error = format!("{error:#}");
+        eprintln!(
+            "{}",
+            crate::i18n::t_fmt("windows_toast_failed", &[("error", &error)])
+        );
         show_windows_message_box(title, body);
     }
     Ok(())
@@ -36,7 +40,7 @@ fn send_windows_toast(title: &str, body: &str) -> Result<()> {
         .title(title)
         .text1(body)
         .show()
-        .context("Notification Windows (tauri-winrt-notification) échouée")
+        .context("the Windows notification (tauri-winrt-notification) failed")
 }
 
 #[cfg(target_os = "windows")]
@@ -71,7 +75,7 @@ pub fn send_notification(title: &str, body: &str) -> Result<()> {
         .title(title)
         .message(body)
         .send()
-        .context("Notification macOS (mac-notification-sys) échouée")?;
+        .context("the macOS notification (mac-notification-sys) failed")?;
     Ok(())
 }
 
