@@ -26,5 +26,6 @@ fn unknown_argument_exits_two_instead_of_starting_the_daemon() {
         .expect("run oasis --bogus");
 
     assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("Usage: oasis"));
+    // The help follows the system language, so look for what both locales share.
+    assert!(String::from_utf8_lossy(&output.stderr).contains("oasis [OPTION]"));
 }

@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 
 use crate::config::TemperatureUnit;
+use crate::i18n::t_fmt;
 use crate::location::{self, Location};
 use crate::weather::{self, OpenMeteoCurrent};
 
@@ -62,7 +63,8 @@ pub async fn get_location_with_cache(
         }
         Err(error) => {
             if let Some(entry) = cached {
-                eprintln!("Échec récupération localisation, cache expiré utilisé: {error:#}");
+                let error = format!("{error:#}");
+                eprintln!("{}", t_fmt("stale_location", &[("error", &error)]));
                 Ok(entry.value)
             } else {
                 Err(error)
@@ -106,7 +108,8 @@ pub async fn get_weather_with_cache(
             if let Some(entry) = cached
                 && entry.matches_location(latitude, longitude)
             {
-                eprintln!("Échec récupération météo, cache expiré utilisé: {error:#}");
+                let error = format!("{error:#}");
+                eprintln!("{}", t_fmt("stale_weather", &[("error", &error)]));
                 return Ok(entry.value);
             }
             Err(error)

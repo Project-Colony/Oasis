@@ -2598,6 +2598,7 @@ dependencies = [
  "notify-rust",
  "reqwest",
  "serde",
+ "sys-locale",
  "tao",
  "tauri-winrt-notification",
  "tokio",

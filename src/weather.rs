@@ -31,33 +31,36 @@ pub async fn fetch_weather(
         .get(url)
         .send()
         .await
-        .context("Échec requête météo Open-Meteo")?
+        .context("the Open-Meteo weather request failed")?
         .error_for_status()
-        .context("Erreur HTTP météo Open-Meteo")?
+        .context("Open-Meteo returned an HTTP error")?
         .json::<OpenMeteoResponse>()
         .await
-        .context("Échec parsing météo Open-Meteo")?;
+        .context("cannot parse the Open-Meteo response")?;
 
-    response.current.context("Réponse météo incomplète")
+    response
+        .current
+        .context("the Open-Meteo response has no current weather")
 }
 
+/// The i18n key of the WMO weather code's description.
 pub fn weather_description(code: i32) -> &'static str {
     match code {
-        0 => "Ciel dégagé",
-        1 | 2 => "Plutôt clair",
-        3 => "Couvert",
-        45 | 48 => "Brouillard",
-        51 | 53 | 55 => "Bruine",
-        56 | 57 => "Bruine verglaçante",
-        61 | 63 | 65 => "Pluie",
-        66 | 67 => "Pluie verglaçante",
-        71 | 73 | 75 => "Neige",
-        77 => "Grains de neige",
-        80..=82 => "Averses",
-        85 | 86 => "Averses de neige",
-        95 => "Orage",
-        96 | 99 => "Orage avec grêle",
-        _ => "Conditions inconnues",
+        0 => "weather_clear_sky",
+        1 | 2 => "weather_mainly_clear",
+        3 => "weather_overcast",
+        45 | 48 => "weather_fog",
+        51 | 53 | 55 => "weather_drizzle",
+        56 | 57 => "weather_freezing_drizzle",
+        61 | 63 | 65 => "weather_rain",
+        66 | 67 => "weather_freezing_rain",
+        71 | 73 | 75 => "weather_snow",
+        77 => "weather_snow_grains",
+        80..=82 => "weather_showers",
+        85 | 86 => "weather_snow_showers",
+        95 => "weather_thunderstorm",
+        96 | 99 => "weather_thunderstorm_with_hail",
+        _ => "weather_unknown",
     }
 }
 
@@ -82,24 +85,50 @@ pub fn weather_icon(code: i32) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::i18n::t_in;
+    use colony_ui::i18n::Locale;
+
+    fn describe(locale: Locale, code: i32) -> &'static str {
+        t_in(locale, weather_description(code))
+    }
 
     #[test]
     fn test_weather_description_known_codes() {
-        assert_eq!(weather_description(0), "Ciel dégagé");
-        assert_eq!(weather_description(1), "Plutôt clair");
-        assert_eq!(weather_description(2), "Plutôt clair");
-        assert_eq!(weather_description(3), "Couvert");
-        assert_eq!(weather_description(45), "Brouillard");
-        assert_eq!(weather_description(61), "Pluie");
-        assert_eq!(weather_description(71), "Neige");
-        assert_eq!(weather_description(95), "Orage");
-        assert_eq!(weather_description(99), "Orage avec grêle");
+        assert_eq!(weather_description(0), "weather_clear_sky");
+        assert_eq!(weather_description(1), "weather_mainly_clear");
+        assert_eq!(weather_description(2), "weather_mainly_clear");
+        assert_eq!(weather_description(3), "weather_overcast");
+        assert_eq!(weather_description(45), "weather_fog");
+        assert_eq!(weather_description(61), "weather_rain");
+        assert_eq!(weather_description(71), "weather_snow");
+        assert_eq!(weather_description(95), "weather_thunderstorm");
+        assert_eq!(weather_description(99), "weather_thunderstorm_with_hail");
+
+        assert_eq!(describe(Locale::En, 0), "Clear sky");
+        assert_eq!(describe(Locale::En, 3), "Overcast");
+        assert_eq!(describe(Locale::En, 99), "Thunderstorm with hail");
+        assert_eq!(describe(Locale::Fr, 3), "Couvert");
+        assert_eq!(describe(Locale::Fr, 61), "Pluie");
+        assert_eq!(describe(Locale::Fr, 71), "Neige");
     }
 
     #[test]
     fn test_weather_description_unknown_code() {
-        assert_eq!(weather_description(999), "Conditions inconnues");
-        assert_eq!(weather_description(-1), "Conditions inconnues");
+        assert_eq!(weather_description(999), "weather_unknown");
+        assert_eq!(weather_description(-1), "weather_unknown");
+        assert_eq!(describe(Locale::En, 999), "Unknown conditions");
+        assert_eq!(describe(Locale::Fr, 999), "Conditions inconnues");
+    }
+
+    /// A description key missing from a table would render as the key itself.
+    #[test]
+    fn every_weather_code_has_a_string_in_both_locales() {
+        for code in -1..=100 {
+            let key = weather_description(code);
+            for locale in [Locale::En, Locale::Fr] {
+                assert_ne!(t_in(locale, key), key, "{key} in {locale:?}");
+            }
+        }
     }
 
     #[test]

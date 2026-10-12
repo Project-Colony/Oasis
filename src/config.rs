@@ -1,3 +1,4 @@
+use crate::i18n::t_fmt;
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::env;
@@ -17,11 +18,46 @@ const MIGRATION_MARKER: &str = ".migrated";
 #[derive(Debug, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
+    pub general: GeneralConfig,
+    #[serde(default)]
     pub hotkeys: HotkeyConfig,
     #[serde(default)]
     pub cache: CacheConfig,
     #[serde(default)]
     pub weather: WeatherConfig,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct GeneralConfig {
+    #[serde(default)]
+    pub language: Language,
+}
+
+/// The language of the console messages and notifications. Read like a locale
+/// tag, so `"FR"` or `"fr-FR"` mean French. A value Oasis does not know is
+/// `Unknown` rather than a config error.
+#[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq)]
+#[serde(from = "String")]
+pub enum Language {
+    /// The system language, English unless it is French.
+    #[default]
+    Auto,
+    En,
+    Fr,
+    /// Not `auto`, `en` or `fr`: the system language, with a warning.
+    Unknown,
+}
+
+impl From<String> for Language {
+    fn from(tag: String) -> Self {
+        let primary = tag.split(['-', '_', '.']).next().unwrap_or_default();
+        match primary.to_ascii_lowercase().as_str() {
+            "auto" => Language::Auto,
+            "en" => Language::En,
+            "fr" => Language::Fr,
+            _ => Language::Unknown,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -165,20 +201,26 @@ fn resolve_config_path(new: &Path, legacy: Option<&Path>) -> PathBuf {
         return new.to_path_buf();
     };
 
+    let (old, new_path) = (legacy.display().to_string(), new.display().to_string());
     match migrate(legacy, new, &marker) {
         Ok(()) => {
             println!(
-                "Oasis copied its config from {} to {}.",
-                legacy.display(),
-                new.display()
+                "{}",
+                t_fmt("config_copied", &[("old", &old), ("new", &new_path)])
             );
             new.to_path_buf()
         }
         Err(error) => {
             eprintln!(
-                "Warning: cannot copy the config from {} to {}: {error}. Oasis keeps reading the old file.",
-                legacy.display(),
-                new.display()
+                "{}",
+                t_fmt(
+                    "config_copy_failed",
+                    &[
+                        ("old", &old),
+                        ("new", &new_path),
+                        ("error", &error.to_string())
+                    ]
+                )
             );
             legacy.to_path_buf()
         }
@@ -213,6 +255,19 @@ mod tests {
             config.cache.location_ttl_seconds,
             Some(DEFAULT_LOCATION_TTL_SECONDS)
         );
+    }
+
+    #[test]
+    fn language_parses_like_a_locale_tag() {
+        let language = |toml: &str| toml::from_str::<Config>(toml).unwrap().general.language;
+        assert_eq!(language(""), Language::Auto);
+        assert_eq!(language("[general]\nlanguage = \"auto\""), Language::Auto);
+        assert_eq!(language("[general]\nlanguage = \"en\""), Language::En);
+        assert_eq!(language("[general]\nlanguage = \"fr\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"FR\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"fr-FR\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"en_US\""), Language::En);
+        assert_eq!(language("[general]\nlanguage = \"de\""), Language::Unknown);
     }
 
     #[test]

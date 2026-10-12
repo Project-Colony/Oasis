@@ -2,29 +2,15 @@ mod cache;
 mod config;
 mod daemon;
 mod hotkey;
+mod i18n;
 mod location;
 mod lookup;
 mod notification;
 mod weather;
 
 use anyhow::Result;
-use config::Config;
-
-const USAGE: &str = "\
-Oasis shows the current weather in a desktop notification.
-
-Usage: oasis [OPTION]
-
-With no option, Oasis runs as a daemon and listens for the global hotkey.
-
-Options:
-      --trigger  Show one notification, then exit
-  -V, --version  Print the version, then exit
-  -h, --help     Print this help, then exit
-
-Environment:
-  OASIS_CONFIG_PATH  Path of the TOML config file to read
-";
+use config::{Config, Language};
+use i18n::{t, t_fmt};
 
 /// What the command line asks Oasis to do.
 #[derive(Debug, PartialEq)]
@@ -52,6 +38,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Cli {
 }
 
 fn main() -> Result<()> {
+    // The system language until the config is read: --help and the messages
+    // printed while the config loads use it.
+    i18n::set_language(Language::Auto);
+
     // Before any config load, GUI init or network access, so `--version` works
     // headless and returns at once (the release workflow smoke-tests it).
     let args = std::env::args_os()
@@ -63,12 +53,12 @@ fn main() -> Result<()> {
             return Ok(());
         }
         Cli::Help => {
-            print!("{USAGE}");
+            print!("{}", t("usage"));
             return Ok(());
         }
         Cli::Unknown(arg) => {
-            eprintln!("oasis: unknown argument '{arg}'\n");
-            eprint!("{USAGE}");
+            eprintln!("{}\n", t_fmt("unknown_argument", &[("arg", &arg)]));
+            eprint!("{}", t("usage"));
             std::process::exit(2);
         }
         Cli::Trigger => true,
@@ -76,10 +66,17 @@ fn main() -> Result<()> {
     };
 
     let config = config::load_config().unwrap_or_else(|error| {
-        eprintln!("Warning: {error:#}");
-        eprintln!("Oasis continues with the default settings.");
+        eprintln!(
+            "{}",
+            t_fmt("config_warning", &[("error", &format!("{error:#}"))])
+        );
+        eprintln!("{}", t("config_defaults"));
         Config::default()
     });
+    i18n::set_language(config.general.language);
+    if config.general.language == Language::Unknown {
+        eprintln!("{}", t("config_unknown_language"));
+    }
 
     if trigger_mode {
         return lookup::run_trigger(&config);

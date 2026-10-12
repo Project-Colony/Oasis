@@ -23,8 +23,7 @@ are appear in a native notification, then go away.
 > toast is sent under the PowerShell AppID, so it appears as coming from
 > Windows PowerShell, with a MessageBox as the fallback. Oasis is a console
 > program there: launched outside a terminal, it can open a console window that
-> stays open while the daemon runs. The console messages and the notification
-> text are in French for now. Until the first release appears on the
+> stays open while the daemon runs. Until the first release appears on the
 > [releases page](../../releases), [building from source](#build-from-source)
 > is the only way to install Oasis.
 
@@ -96,7 +95,16 @@ launch without a new file, Oasis copies the old one to the new path, prints both
 paths and writes a `.migrated` marker next to it, so the copy happens once. The
 old file is left in place. If the copy fails, Oasis keeps reading the old file.
 
+Console messages and notifications are in English or French. `language` picks
+one; `auto`, the default, follows the system language and gives English unless
+it is French. Any other value prints a warning and follows the system language.
+`--help` and the messages printed while the config loads always follow the
+system language, because they come before the file is read.
+
 ```toml
+[general]
+language = "auto" # or "en", "fr"
+
 [hotkeys]
 primary = "Super+Shift+W"
 secondary = "Super+Shift+W"
