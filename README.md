@@ -24,7 +24,9 @@ are appear in a native notification, then go away.
 > Windows PowerShell, with a MessageBox as the fallback. Oasis is a console
 > program there: launched outside a terminal, it can open a console window that
 > stays open while the daemon runs. The console messages and the notification
-> text are in French for now.
+> text are in French for now. Until the first release appears on the
+> [releases page](../../releases), [building from source](#build-from-source)
+> is the only way to install Oasis.
 
 ## Why Oasis
 
@@ -199,8 +201,8 @@ you trigger a lookup.
 | Data | Stored or sent | Where, and why |
 |---|---|---|
 | Settings | stored | `Colony/Oasis/preferences/config.toml` in this machine's config directory. Oasis only reads it, except for the one-time copy of a config from an earlier version, plus its `.migrated` marker. |
-| Your IP address | sent | to [ipapi.co](https://ipapi.co/privacy/) (`https://ipapi.co/json/`) on each lookup, and to [ipwho.is](https://ipwhois.io/privacy) (`https://ipwho.is/`) only when ipapi.co fails. Oasis uses the approximate city, region, country, latitude and longitude they return. |
-| Approximate latitude and longitude, temperature unit | sent | to [Open-Meteo](https://open-meteo.com/en/terms) (`https://api.open-meteo.com/v1/forecast`) on each lookup, which answers with the current temperature and a weather code. Like any HTTPS request, it also shows your IP address. |
+| Your IP address | sent | to [ipapi.co](https://ipapi.co/privacy/) (`https://ipapi.co/json/`) on each lookup the location cache cannot answer (see the cache row below), and to [ipwho.is](https://ipwhois.io/privacy) (`https://ipwho.is/`) only when ipapi.co fails. Oasis uses the approximate city, region, country, latitude and longitude they return. |
+| Approximate latitude and longitude, temperature unit | sent | to [Open-Meteo](https://open-meteo.com/en/terms) (`https://api.open-meteo.com/v1/forecast`) on each lookup the weather cache cannot answer, which answers with the current temperature and a weather code. Like any HTTPS request, it also shows your IP address. |
 | Location and weather answers | kept in memory | in daemon mode only, and only until Oasis exits: the location for 24 hours and the weather for 5 minutes by default (`[cache]` in the config). `oasis --trigger` keeps nothing, so every press makes the requests again. |
 | Place name and weather | shown | in a notification, through the operating system's notification service, which may keep it in its notification history. |
 
