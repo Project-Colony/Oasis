@@ -18,22 +18,14 @@ pub fn set_language(language: Language) {
     let locale = match language {
         Language::En => Locale::En,
         Language::Fr => Locale::Fr,
-        Language::Auto => Locale::from_tag(&system_language()),
+        // The OS language: the user's UI language on Windows and macOS,
+        // `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` or `LANG` elsewhere. Nothing set
+        // gives an empty tag, which is English.
+        Language::Auto | Language::Unknown => {
+            Locale::from_tag(&sys_locale::get_locale().unwrap_or_default())
+        }
     };
     set_locale(locale);
-}
-
-/// The OS language: the user's UI language on Windows and macOS, `LANGUAGE`,
-/// `LC_ALL`, `LC_MESSAGES` or `LANG` elsewhere. Empty when nothing is set,
-/// which gives English.
-fn system_language() -> String {
-    sys_locale::get_locale()
-        .or_else(|| {
-            ["LC_ALL", "LC_MESSAGES", "LANG"]
-                .into_iter()
-                .find_map(|var| std::env::var(var).ok().filter(|value| !value.is_empty()))
-        })
-        .unwrap_or_default()
 }
 
 /// The string for `key` in the active locale.
@@ -43,9 +35,31 @@ pub fn t(key: &'static str) -> &'static str {
 
 /// `t`, with each `{name}` placeholder replaced by its value.
 pub fn t_fmt(key: &'static str, vars: &[(&str, &str)]) -> String {
-    vars.iter().fold(t(key).to_string(), |text, (name, value)| {
-        text.replace(&format!("{{{name}}}"), value)
-    })
+    fill(t(key), vars)
+}
+
+/// Replaces the placeholders in one pass, so a value that contains `{name}`
+/// text is printed as it is. An unknown placeholder stays in the text.
+fn fill(template: &str, vars: &[(&str, &str)]) -> String {
+    let mut text = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(start) = rest.find('{') {
+        text.push_str(&rest[..start]);
+        rest = &rest[start + 1..];
+        let var = rest.split_once('}').and_then(|(name, tail)| {
+            let (_, value) = vars.iter().find(|(var, _)| *var == name)?;
+            Some((*value, tail))
+        });
+        match var {
+            Some((value, tail)) => {
+                text.push_str(value);
+                rest = tail;
+            }
+            None => text.push('{'),
+        }
+    }
+    text.push_str(rest);
+    text
 }
 
 /// The string for `key` in `locale`, then in English, then the key itself, so a
@@ -79,6 +93,15 @@ mod tests {
             .skip(1)
             .filter_map(|rest| rest.split_once('}').map(|(name, _)| name))
             .collect()
+    }
+
+    #[test]
+    fn fill_replaces_each_placeholder_once() {
+        let vars = [("old", "/a/{new}"), ("new", "/b"), ("error", "{x")];
+        assert_eq!(
+            fill("{old} to {new}: {error} {unknown} {", &vars),
+            "/a/{new} to /b: {x {unknown} {"
+        );
     }
 
     #[test]

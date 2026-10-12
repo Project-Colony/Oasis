@@ -74,6 +74,9 @@ fn main() -> Result<()> {
         Config::default()
     });
     i18n::set_language(config.general.language);
+    if config.general.language == Language::Unknown {
+        eprintln!("{}", t("config_unknown_language"));
+    }
 
     if trigger_mode {
         return lookup::run_trigger(&config);

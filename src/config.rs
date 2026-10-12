@@ -34,8 +34,8 @@ pub struct GeneralConfig {
 }
 
 /// The language of the console messages and notifications. Read like a locale
-/// tag, so `"FR"` or `"fr-FR"` mean French. A value Oasis does not know means
-/// `auto` rather than a config error.
+/// tag, so `"FR"` or `"fr-FR"` mean French. A value Oasis does not know is
+/// `Unknown` rather than a config error.
 #[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq)]
 #[serde(from = "String")]
 pub enum Language {
@@ -44,15 +44,18 @@ pub enum Language {
     Auto,
     En,
     Fr,
+    /// Not `auto`, `en` or `fr`: the system language, with a warning.
+    Unknown,
 }
 
 impl From<String> for Language {
     fn from(tag: String) -> Self {
         let primary = tag.split(['-', '_', '.']).next().unwrap_or_default();
         match primary.to_ascii_lowercase().as_str() {
+            "auto" => Language::Auto,
             "en" => Language::En,
             "fr" => Language::Fr,
-            _ => Language::Auto,
+            _ => Language::Unknown,
         }
     }
 }
@@ -255,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn language_parses_and_an_unknown_value_means_auto() {
+    fn language_parses_like_a_locale_tag() {
         let language = |toml: &str| toml::from_str::<Config>(toml).unwrap().general.language;
         assert_eq!(language(""), Language::Auto);
         assert_eq!(language("[general]\nlanguage = \"auto\""), Language::Auto);
@@ -264,7 +267,7 @@ mod tests {
         assert_eq!(language("[general]\nlanguage = \"FR\""), Language::Fr);
         assert_eq!(language("[general]\nlanguage = \"fr-FR\""), Language::Fr);
         assert_eq!(language("[general]\nlanguage = \"en_US\""), Language::En);
-        assert_eq!(language("[general]\nlanguage = \"de\""), Language::Auto);
+        assert_eq!(language("[general]\nlanguage = \"de\""), Language::Unknown);
     }
 
     #[test]

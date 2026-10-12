@@ -38,6 +38,10 @@ Environment:
         "config_copy_failed",
         "Warning: cannot copy the config from {old} to {new}: {error}. Oasis keeps reading the old file.",
     ),
+    (
+        "config_unknown_language",
+        "Warning: [general] language must be \"auto\", \"en\" or \"fr\". Oasis follows the system language.",
+    ),
     // Daemon
     (
         "wayland_hint",

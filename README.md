@@ -97,8 +97,9 @@ old file is left in place. If the copy fails, Oasis keeps reading the old file.
 
 Console messages and notifications are in English or French. `language` picks
 one; `auto`, the default, follows the system language and gives English unless
-it is French. `--help` and the messages printed while the config loads always
-follow the system language, because they come before the file is read.
+it is French. Any other value prints a warning and follows the system language.
+`--help` and the messages printed while the config loads always follow the
+system language, because they come before the file is read.
 
 ```toml
 [general]
