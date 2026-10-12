@@ -15,7 +15,9 @@ address (with a fallback service), then fetches the weather from Open-Meteo.
 
 ### Weather
 
-- Open-Meteo (free, no API key)
+- Open-Meteo: `https://api.open-meteo.com/v1/forecast` (free for non-commercial
+  use, no API key). Weather data by [Open-Meteo.com](https://open-meteo.com/),
+  under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## How it works
 
@@ -31,8 +33,9 @@ address (with a fallback service), then fetches the weather from Open-Meteo.
 - Notifications per OS: `notify-rust` (Linux), `tauri-winrt-notification` with
   a MessageBox fallback (Windows), `mac-notification-sys` (macOS).
 - Configuration from an optional TOML file, with defaults.
-- The location is cached for a long time (one day by default) and the weather
-  for a short time (five minutes by default).
+- In daemon mode, the location is cached for a long time (one day by default)
+  and the weather for a short time (five minutes by default). `--trigger` runs
+  one lookup per process, so it caches nothing.
 
 ### Module map
 
@@ -52,14 +55,19 @@ All the code is one binary crate, one flat file per module under `src/`:
 
 ## Security and privacy
 
-- Both caches live in memory and are gone when Oasis exits. The only thing
-  Oasis writes to disk is the one-time copy of a config file from an earlier
-  version, plus its `.migrated` marker.
-- It only makes network requests when you trigger a lookup, and the caches
-  avoid repeating them.
+- Oasis makes network requests only when you trigger a lookup. Each request
+  goes to the services listed above, and each shows them your IP address.
+- In daemon mode, both caches live in memory and are gone when Oasis exits.
+  Within their lifetime a lookup reuses them instead of making the requests
+  again, and a failed request falls back to the expired entry when there is
+  one. `--trigger` caches nothing, so every press makes the requests.
+- The only thing Oasis writes to disk is the one-time copy of a config file
+  from an earlier version, plus its `.migrated` marker.
 - There is no way yet to turn IP geolocation off or to set a fixed location.
 
 ## Installation
 
-See `docs/installation.md` for per-OS instructions and the build and release
-scripts.
+See `docs/installation.md` for building and running Oasis on each OS. Releases
+are built, signed and published by `.github/workflows/release.yml` when a
+release-please pull request is merged; the README's Code signing policy shows
+how to check a download.

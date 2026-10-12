@@ -1,6 +1,8 @@
 # Installation
 
-This guide covers building and running Oasis Weather Notify on each OS.
+This guide covers building and running Oasis Weather Notify on each OS. To
+install a prebuilt binary instead, through Colony or from the release page, see
+the Installation section of the README.
 
 ## Common requirements
 
@@ -17,7 +19,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
 2. Clone the repository.
 3. Build in release mode:
    ```bash
-   ./scripts/build.sh
+   cargo build --release
    ```
 4. Run the application:
    ```bash
@@ -37,7 +39,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
 1. Clone the repository.
 2. Build in release mode:
    ```bash
-   ./scripts/build.sh
+   cargo build --release
    ```
 3. Run the application:
    ```bash
@@ -56,7 +58,7 @@ This guide covers building and running Oasis Weather Notify on each OS.
 1. Clone the repository.
 2. Build in release mode:
    ```powershell
-   .\scripts\release.ps1
+   cargo build --release
    ```
 3. Run the application:
    ```powershell
@@ -66,7 +68,11 @@ This guide covers building and running Oasis Weather Notify on each OS.
 ### Notifications
 
 - Notifications use `tauri-winrt-notification`, with a MessageBox fallback.
-- Check that notifications are allowed for the application.
+- Oasis sends its toasts under the Windows PowerShell AppID, so they appear as
+  coming from Windows PowerShell. Check that notifications are allowed for
+  Windows PowerShell in Settings, System, Notifications.
+- Oasis is a console program: launched outside a terminal, it can open a
+  console window, which stays open while the daemon runs.
 
 ## Configuration
 
