@@ -33,18 +33,28 @@ pub struct GeneralConfig {
     pub language: Language,
 }
 
-/// The language of the console messages and notifications. A value Oasis does
-/// not know means `auto` rather than a config error.
+/// The language of the console messages and notifications. Read like a locale
+/// tag, so `"FR"` or `"fr-FR"` mean French. A value Oasis does not know means
+/// `auto` rather than a config error.
 #[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq)]
-#[serde(rename_all = "lowercase")]
+#[serde(from = "String")]
 pub enum Language {
+    /// The system language, English unless it is French.
+    #[default]
+    Auto,
     En,
     Fr,
-    /// The system language, English unless it is French. Last, because serde
-    /// only accepts `other` on the last variant.
-    #[default]
-    #[serde(other)]
-    Auto,
+}
+
+impl From<String> for Language {
+    fn from(tag: String) -> Self {
+        let primary = tag.split(['-', '_', '.']).next().unwrap_or_default();
+        match primary.to_ascii_lowercase().as_str() {
+            "en" => Language::En,
+            "fr" => Language::Fr,
+            _ => Language::Auto,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -251,6 +261,9 @@ mod tests {
         assert_eq!(language("[general]\nlanguage = \"auto\""), Language::Auto);
         assert_eq!(language("[general]\nlanguage = \"en\""), Language::En);
         assert_eq!(language("[general]\nlanguage = \"fr\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"FR\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"fr-FR\""), Language::Fr);
+        assert_eq!(language("[general]\nlanguage = \"en_US\""), Language::En);
         assert_eq!(language("[general]\nlanguage = \"de\""), Language::Auto);
     }
 
