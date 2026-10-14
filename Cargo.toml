@@ -12,8 +12,8 @@ repository = "https://github.com/Project-Colony/Oasis"
 anyhow = "1.0.104"
 serde = { version = "1.0.229", features = ["derive"] }
 reqwest = { version = "0.13.5", features = ["json", "rustls"] }
-tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread"] }
-toml = "1.1.7"
+tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
+toml = "1.1.8"
 # For colony_ui::paths (the shared Colony/<Program> layout) and colony_ui::i18n (the
 # active locale); no fonts embedded.
 # ponytail: colony-ui 0.1.6 pulls iced and wgpu into the build although Oasis opens no

@@ -17,10 +17,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # rustup is on every GitHub-hosted runner image, so there is no
+      # third-party toolchain action to pin.
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable branch
-        with:
-          components: rustfmt, clippy
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy --no-self-update
+          rustup default stable
       - name: Cache cargo
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Install Linux dependencies
@@ -34,13 +37,19 @@ jobs:
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --all
+      # The release workflow smoke-tests `oasis --version` on every artifact.
+      # Checking the same thing here fails the PR that breaks it, not the
+      # release tag. It must print and exit before any config, GUI or network.
+      - name: Smoke-test --version
+        shell: bash
+        run: cargo run --quiet --locked -- --version | grep '^oasis [0-9]'
 
   # rust-version in Cargo.toml is a promise about who can build Oasis. Without
   # this job nothing ever builds on it, and it drifts.
   #
   # RUSTUP_TOOLCHAIN is what pins the cargo invocations: it outranks both the
-  # rustup default the toolchain action sets and any rust-toolchain.toml. The
-  # rustc check makes a pin that silently stopped working fail loudly.
+  # rustup default and any rust-toolchain.toml. The rustc check makes a pin
+  # that silently stopped working fail loudly.
   msrv:
     name: MSRV
     runs-on: ubuntu-latest
@@ -55,9 +64,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
 
-      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable branch
-        with:
-          toolchain: ${{ steps.msrv.outputs.version }}
+      - name: Install Rust
+        shell: bash
+        run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal --no-self-update
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
