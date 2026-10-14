@@ -15,17 +15,18 @@ desktop widget that stays on screen all day. Oasis is a small background program
 with no window: press `Super+Shift+W` and the current conditions for where you
 are appear in a native notification, then go away.
 
-> **Status:** early. On every change, CI builds Oasis and runs its tests on
-> Linux, Windows and macOS (Apple Silicon); the Intel macOS binary is only
-> cross-built by the release workflow. CI does not show a notification, so the
+> **Status:** early. The first release, v0.2.0, is on the
+> [releases page](../../releases), with ed25519-signed assets for Linux,
+> Windows, macOS (Apple Silicon) and macOS (Intel). On every change, CI builds
+> Oasis and runs its tests on Linux, Windows and macOS (Apple Silicon). The
+> release workflow builds the Intel macOS binary, but only checks its
+> architecture, not that it runs. CI does not show a notification, so the
 > per-OS notification code is wired but not exercised there, and the Windows
 > and macOS notifications have not been checked by hand yet. On Windows the
 > toast is sent under the PowerShell AppID, so it appears as coming from
 > Windows PowerShell, with a MessageBox as the fallback. Oasis is a console
 > program there: launched outside a terminal, it can open a console window that
-> stays open while the daemon runs. Until the first release appears on the
-> [releases page](../../releases), [building from source](#build-from-source)
-> is the only way to install Oasis.
+> stays open while the daemon runs.
 
 ## Why Oasis
 
