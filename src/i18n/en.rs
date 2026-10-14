@@ -60,7 +60,7 @@ Example for Sway (~/.config/sway/config):
 
 Starting the daemon anyway (the hotkeys may not work)...",
     ),
-    ("daemon_ready", "Oasis Weather Notify - ready."),
+    ("daemon_ready", "Oasis - ready."),
     (
         "daemon_hotkeys",
         "Hotkeys: {primary} (AZERTY) or {secondary} (QWERTY).",

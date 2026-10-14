@@ -2,9 +2,9 @@
 
 ## Description
 
-Oasis Weather Notify is a cross-platform desktop tool that shows the current
-weather on demand, from a global hotkey. It derives your location from your IP
-address (with a fallback service), then fetches the weather from Open-Meteo.
+Oasis is a cross-platform desktop tool that shows the current weather on demand,
+from a global hotkey. It derives your location from your IP address (with a
+fallback service), then fetches the weather from Open-Meteo.
 
 ## Services used
 

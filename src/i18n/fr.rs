@@ -57,7 +57,7 @@ Exemple pour Sway (~/.config/sway/config) :
 
 Oasis démarre quand même en tâche de fond (les raccourcis risquent de ne pas fonctionner)...",
     ),
-    ("daemon_ready", "Oasis Weather Notify - prêt."),
+    ("daemon_ready", "Oasis - prêt."),
     (
         "daemon_hotkeys",
         "Raccourcis : {primary} (AZERTY) ou {secondary} (QWERTY).",
