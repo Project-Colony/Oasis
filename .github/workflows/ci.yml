@@ -43,6 +43,18 @@ jobs:
       - name: Smoke-test --version
         shell: bash
         run: cargo run --quiet --locked -- --version | grep '^oasis [0-9]'
+      # An unknown argument must exit 2 with the usage on stderr, not start
+      # the daemon. The help follows the system language, so look for what
+      # both locales share.
+      - name: Smoke-test an unknown argument
+        shell: bash
+        run: |
+          set +e
+          cargo run --quiet --locked -- --bogus 2> stderr.txt
+          status=$?
+          set -e
+          [ "$status" -eq 2 ] || { echo "::error::oasis --bogus exited $status, expected 2"; exit 1; }
+          grep -qF 'oasis [OPTION]' stderr.txt || { echo "::error::oasis --bogus did not print the usage on stderr"; cat stderr.txt; exit 1; }
 
   # rust-version in Cargo.toml is a promise about who can build Oasis. Without
   # this job nothing ever builds on it, and it drifts.
