@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Project-Colony/Oasis/compare/v0.2.0...v0.2.1) (2026-10-14)
+
+
+### Fixes
+
+* call the program Oasis everywhere and document the language setting ([#19](https://github.com/Project-Colony/Oasis/issues/19)) ([a6af280](https://github.com/Project-Colony/Oasis/commit/a6af280172cf726a3e77e9614f6917a0f0088fd1))
+
 ## [0.2.0](https://github.com/Project-Colony/Oasis/compare/v0.1.0...v0.2.0) (2026-10-12)
 
 
