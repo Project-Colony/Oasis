@@ -1,8 +1,8 @@
 # Installation
 
-This guide covers building and running Oasis Weather Notify on each OS. To
-install a prebuilt binary instead, through Colony or from the release page, see
-the Installation section of the README.
+This guide covers building and running Oasis on each OS. To install a prebuilt
+binary instead, through Colony or from the release page, see the Installation
+section of the README.
 
 ## Common requirements
 
@@ -76,8 +76,8 @@ the Installation section of the README.
 
 ## Configuration
 
-An optional TOML file sets the hotkeys, the cache lifetimes and the temperature
-unit:
+An optional TOML file sets the language (`auto`, `en` or `fr`), the hotkeys, the
+cache lifetimes and the temperature unit:
 
 - Linux: `~/.config/Colony/Oasis/preferences/config.toml`
 - Windows: `%LOCALAPPDATA%\Colony\Oasis\preferences\config.toml`
