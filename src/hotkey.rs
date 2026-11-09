@@ -78,7 +78,7 @@ fn parse_hotkey_inner(configured: &str) -> Result<HotKey> {
             "alt" => modifiers |= Modifiers::ALT,
             "shift" => modifiers |= Modifiers::SHIFT,
             "ctrl" | "control" => modifiers |= Modifiers::CONTROL,
-            "super" | "meta" | "cmd" | "command" | "win" => modifiers |= Modifiers::SUPER,
+            "super" | "meta" | "cmd" | "command" | "win" => modifiers |= Modifiers::META,
             key => {
                 if code.is_some() {
                     return Err(anyhow!("more than one main key"));
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_parse_hotkey_inner_super_w() {
         let hotkey = parse_hotkey_inner("Super+W").unwrap();
-        let expected = HotKey::new(Some(Modifiers::SUPER), Code::KeyW);
+        let expected = HotKey::new(Some(Modifiers::META), Code::KeyW);
         assert_eq!(hotkey, expected);
     }
 

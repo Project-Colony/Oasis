@@ -86,7 +86,7 @@ pub fn run_daemon(config: Config) -> Result<()> {
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
     let manager = GlobalHotKeyManager::new().context("cannot start the global hotkey manager")?;
 
-    let default_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyW);
+    let default_hotkey = HotKey::new(Some(Modifiers::META | Modifiers::SHIFT), Code::KeyW);
     let hotkey_azerty = hotkey::parse_hotkey(primary_str, default_hotkey);
     let hotkey_qwerty = hotkey::parse_hotkey(secondary_str, default_hotkey);
 
