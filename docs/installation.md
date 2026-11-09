@@ -6,7 +6,7 @@ section of the README.
 
 ## Common requirements
 
-- Rust and Cargo, version 1.89 or newer, to build from source.
+- Rust and Cargo, version 1.99 or newer, to build from source.
 - Outbound network access for the IP and weather lookups.
 
 ## Linux

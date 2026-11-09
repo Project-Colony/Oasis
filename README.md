@@ -153,7 +153,7 @@ cargo build --release
 ./target/release/oasis
 ```
 
-Requires Rust 1.89 or newer. On Linux you also need the GTK 3 development files:
+Requires Rust 1.99 or newer. On Linux you also need the GTK 3 development files:
 `libgtk-3-dev` on Debian and Ubuntu, `gtk3` on Arch Linux, `gtk3-devel` on
 Fedora.
 
