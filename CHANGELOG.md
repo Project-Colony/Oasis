@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Project-Colony/Oasis/compare/v0.2.2...v0.2.3) (2026-11-24)
+
+
+### Fixes
+
+* **deps:** update dependencies and Rust to 1.100 ([#32](https://github.com/Project-Colony/Oasis/issues/32)) ([3d675f5](https://github.com/Project-Colony/Oasis/commit/3d675f57d687d755dd76c71db5e1535dc19109d4))
+
 ## [0.2.2](https://github.com/Project-Colony/Oasis/compare/v0.2.1...v0.2.2) (2026-11-09)
 
 
